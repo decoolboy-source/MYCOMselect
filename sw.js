@@ -1,6 +1,6 @@
 // Cache Storage dùng chung cả origin decoolboy-source.github.io: chỉ xóa cache của chính app này.
 const CACHE_PREFIX = "MYCOMselect-";
-const CACHE_NAME = CACHE_PREFIX + "v1";
+const CACHE_NAME = CACHE_PREFIX + "v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const ASSETS = [
   "./icons.js",
   "./app.js",
   "./data-io.js",
+  "./oil.js",
   "./data.json",
   "./manifest.json",
   "./icon-192.png",

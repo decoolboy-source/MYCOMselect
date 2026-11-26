@@ -18,6 +18,7 @@ index.html      Giao diện (bộ lọc + kết quả + trang Báo cáo)
 nasa-ui.css     Giao diện CHUNG các app chọn thiết bị (giống hệt ECselect/EEselect/MCselect)
 icons.js        Bộ icon CHUNG (trích từ Lucide, chạy offline)
 data-io.js      Xuất/Nhập dữ liệu JSON (chuẩn chung)
+oil.js          Bảng dầu nạp máy nén (lít/bộ, Không Eco / Có Eco)
 style.css       Phần riêng của app
 app.js          Logic lọc, hiển thị, song ngữ, giỏ chọn, xuất phiếu
 data.json       Dữ liệu máy nén MYCOM (cùng cấu trúc với MCselect, chỉ 1 hãng)
@@ -63,11 +64,20 @@ cuối trang phải khớp bản mới.
 3. Nhiệt độ bay hơi
 4. Tra theo **Model** hoặc theo **Công suất lạnh (kW)** — theo công suất sẽ
    hiện 10 model gần nhất, bấm để xem chi tiết
-5. Nhập số lượng → "Thêm vào báo cáo" → trang Báo cáo: thông tin dự án, điều
+5. Kết quả có ô **Dầu nạp** (lít/bộ, Không Eco / Có Eco) lấy từ bảng dầu theo series.
+6. Nhập số lượng → "Thêm vào báo cáo" → trang Báo cáo: thông tin dự án, điều
    kiện thương mại, xuất CSV / In-PDF / Word (.doc là HTML có namespace `mso`,
    không phải `.docx`).
 
+Màn hình **Dầu nạp** (nút trên thanh đầu / thanh dưới): chọn model, cấu hình Eco, số máy,
+% dự phòng → tổng lít dầu cần mua; kèm bảng đủ 24 model.
+
 ## Cập nhật dữ liệu
+
+Bảng dầu nạp nằm trong `oil.js` (nguồn: `Compressor_Lubricant.csv`). Cột `sel` ghép mã đặt
+hàng MCN… với mã series trong `data.json` — hai mã là cùng một máy (vd. `MCN 200S-L/51` ↔
+`N200VSD`, `MCN2016LSC-L/51` ↔ `2016LSC`). Model chưa có dữ liệu chọn máy để `sel: null`.
+
 
 `data.json` lấy từ mục `brands[id = "mycom"]` trong `MCselect/data.json`. Khi
 dữ liệu MYCOM ở MCselect thay đổi, lọc lại:
@@ -88,6 +98,11 @@ HTML/CSS/JavaScript thuần, không framework, không thư viện ngoài, không
 backend; không gửi dữ liệu đi đâu.
 
 ## Lịch sử phiên bản
+
+### 2026-11-27 — `MYCOMselect-v2`, build 2026-11-27.1
+
+Chuyển công cụ "Lubricant Mycom" từ Toolkits (AppThermoEngine) sang đây: màn hình Dầu nạp và ô
+dầu nạp trong kết quả chọn máy. Bỏ chức năng nạp CSV của bản cũ (dữ liệu đã nằm sẵn trong `oil.js`).
 
 ### 2026-11-26 — bản đầu `MYCOMselect-v1`
 

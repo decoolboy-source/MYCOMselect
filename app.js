@@ -1,7 +1,7 @@
 /* [MYCOMselect] localStorage dùng chung origin với các PWA khác: mọi khóa của app này có tiền tố "MYCOMselect:". */
 
 // ===================== Build info =====================
-const BUILD_VERSION = "2026-11-26.1";
+const BUILD_VERSION = "2026-11-27.1";
 
 // ===================== i18n: UI strings =====================
 const UI = {
@@ -10,6 +10,29 @@ const UI = {
     tagline: "Máy nén trục vít MYCOM (Mayekawa)",
     navLookup: "Tra cứu",
     navReport: "Báo cáo",
+    navOil: "Dầu nạp",
+    oilTitle: "Lượng dầu nạp máy nén",
+    oilSub: "Lượng dầu nạp lần đầu cho một bộ máy theo catalogue MYCOM, có hoặc không có bộ tiết kiệm (economizer).",
+    oilCalcTitle: "Tính lượng dầu cần mua",
+    oilModel: "Model máy nén",
+    oilConfig: "Cấu hình",
+    oilNoEco: "Không Eco",
+    oilWithEco: "Có Eco",
+    oilQty: "Số máy",
+    oilMargin: "Dự phòng hao hụt (%)",
+    oilTableTitle: "Bảng dầu nạp (lít/bộ)",
+    oilNote: "Nguồn: catalogue dầu nạp MYCOM. Mã MCN… và mã series dùng ở phần chọn máy là cùng một máy. Đối chiếu catalogue/hướng dẫn lắp đặt trước khi đặt mua dầu.",
+    oilGroup: "Nhóm",
+    oilSelCode: "Mã chọn máy",
+    oilPerUnit: "Dầu / bộ",
+    oilTotal: "Tổng dầu cần mua",
+    oilFormula: (u, q, m) => `${u} L × ${q} máy × (1 + ${m}%)`,
+    oilNoData: (model, cfg) => `Catalogue chưa có số liệu dầu cho ${model} — cấu hình "${cfg}".`,
+    oilBoxTitle: "Dầu nạp (catalogue MYCOM)",
+    oilBoxFor: (q) => `cho ${q} máy`,
+    oilBoxOpen: "Tính lượng dầu",
+    oilBoxNone: "Chưa có số liệu dầu nạp cho model này.",
+    litre: "L",
     conditionsTitle: "Điều kiện tra cứu",
     reportTitle: "Báo cáo thiết bị đã chọn",
     exportTitle: "Phiếu yêu cầu báo giá",
@@ -111,6 +134,29 @@ const UI = {
     tagline: "MYCOM (Mayekawa) screw compressors",
     navLookup: "Lookup",
     navReport: "Report",
+    navOil: "Oil charge",
+    oilTitle: "Compressor oil charge",
+    oilSub: "Initial oil charge per unit from the MYCOM catalogue, with or without economizer.",
+    oilCalcTitle: "Oil quantity to order",
+    oilModel: "Compressor model",
+    oilConfig: "Configuration",
+    oilNoEco: "Without Eco",
+    oilWithEco: "With Eco",
+    oilQty: "Units",
+    oilMargin: "Spare / losses (%)",
+    oilTableTitle: "Oil charge table (L/unit)",
+    oilNote: "Source: MYCOM oil charge catalogue. MCN… order codes and the series codes used for selection refer to the same machine. Check the catalogue / installation manual before ordering oil.",
+    oilGroup: "Group",
+    oilSelCode: "Selection code",
+    oilPerUnit: "Oil / unit",
+    oilTotal: "Total oil to order",
+    oilFormula: (u, q, m) => `${u} L × ${q} units × (1 + ${m}%)`,
+    oilNoData: (model, cfg) => `The catalogue has no oil figure for ${model} — "${cfg}".`,
+    oilBoxTitle: "Oil charge (MYCOM catalogue)",
+    oilBoxFor: (q) => `for ${q} units`,
+    oilBoxOpen: "Oil calculator",
+    oilBoxNone: "No oil charge figure for this model yet.",
+    litre: "L",
     conditionsTitle: "Lookup conditions",
     reportTitle: "Selected equipment report",
     exportTitle: "Quote request",
@@ -769,6 +815,8 @@ function renderResult(rec){
   const evap = getParam(entries, "EVAPORATIVE TEMP.");
   document.getElementById("rCondEvap").textContent = `${fmtNum(cond)} / ${fmtNum(evap)}`;
 
+  renderOilBox(rec);
+
   const groups = {};
   for (const [label, unit, value] of entries) {
     if (HERO_KEYS.has(label) || IDENTITY_KEYS.has(label)) continue;
@@ -835,6 +883,7 @@ function refreshAllText(){
     }
   }
   // re-render whatever was visible, in the new language
+  renderOilView();
   if (!document.getElementById("reportView").hidden) {
     renderCart();
   }
@@ -1031,21 +1080,113 @@ for (const f of COMMERCIAL_FIELDS) {
 }
 
 // ---- view toggling ----
-// Hai màn hình: tra cứu / báo cáo. Thanh dưới (điện thoại) và nút Báo cáo (PC) chuyển qua lại.
+// Ba màn hình: tra cứu / dầu nạp / báo cáo. Thanh dưới (điện thoại) và nút trên thanh đầu (PC) chuyển qua lại.
 function showView(name){
-  const onReport = name === "report";
-  document.getElementById("lookupView").hidden = onReport;
-  document.getElementById("reportView").hidden = !onReport;
-  const h = document.getElementById("navHome"), q = document.getElementById("navQuote");
-  if (onReport) { h.removeAttribute("aria-current"); q.setAttribute("aria-current", "page"); renderCart(); }
-  else { q.removeAttribute("aria-current"); h.setAttribute("aria-current", "page"); }
+  const views = { lookup: "lookupView", oil: "oilView", report: "reportView" };
+  const navs = { lookup: "navHome", oil: "navOil", report: "navQuote" };
+  for (const k of Object.keys(views)) {
+    document.getElementById(views[k]).hidden = k !== name;
+    const n = document.getElementById(navs[k]);
+    if (k === name) n.setAttribute("aria-current", "page"); else n.removeAttribute("aria-current");
+  }
+  if (name === "report") renderCart();
+  if (name === "oil") renderOilView();
   window.scrollTo(0, 0);
 }
 document.getElementById("cartBtn").addEventListener("click", () => showView("report"));
 document.getElementById("navQuote").addEventListener("click", () => showView("report"));
+document.getElementById("oilBtn").addEventListener("click", () => showView("oil"));
+document.getElementById("navOil").addEventListener("click", () => showView("oil"));
 document.getElementById("navHome").addEventListener("click", () => showView("lookup"));
 document.getElementById("homeBrand").addEventListener("click", () => showView("lookup"));
 document.getElementById("backToLookupBtn").addEventListener("click", () => showView("lookup"));
+document.getElementById("backFromOilBtn").addEventListener("click", () => showView("lookup"));
+
+// ===================== Dầu nạp (dữ liệu ở oil.js) =====================
+const OIL_KEY = "MYCOMselect:oilCalc";
+let OIL = { idx: 0, eco: false, qty: 1, margin: 10 };
+try { OIL = Object.assign(OIL, JSON.parse(localStorage.getItem(OIL_KEY) || "{}")); } catch {}
+if (!OIL_DB[OIL.idx]) OIL.idx = 0;
+function saveOil(){ localStorage.setItem(OIL_KEY, JSON.stringify(OIL)); }
+
+function oilValue(o, eco){ return eco ? o.withEco : o.noEco; }
+function oilModelLabel(o){ return o.sel ? `${o.model} (${o.sel})` : o.model; }
+function oilRound(v){ return Math.round(v * 10) / 10; }
+
+// Ô "Dầu nạp" trong kết quả chọn máy: ghép series đang xem với bảng dầu.
+function renderOilBox(rec){
+  const box = document.getElementById("oilBox");
+  const o = oilForSeries(rec.seriesId);
+  const T = UI[LANG];
+  const qty = Math.max(1, parseInt(document.getElementById("qtyInput").value, 10) || 1);
+  const cell = (label, v) => `<div class="oil-box-cell"><span class="readout-label">${label}</span>
+    <span class="readout-value readout-value-small">${v == null ? "—" : fmtNum(v)}<small>${v == null ? "" : T.litre}</small></span>
+    ${v != null && qty > 1 ? `<span class="ui-tiny">${fmtNum(v * qty)} ${T.litre} ${T.oilBoxFor(qty)}</span>` : ""}</div>`;
+  box.innerHTML = `<div class="oil-box-head">${uiIcon("droplets")}<span>${T.oilBoxTitle}</span>
+      ${o ? `<span class="ui-tiny ui-mono">${o.model}</span>` : ""}
+      <button type="button" class="ui-btn-link oil-box-link" id="oilBoxOpen">${T.oilBoxOpen}${uiIcon("arrow-right", "ui-icon-sm")}</button></div>
+    ${o ? `<div class="oil-box-grid">${cell(T.oilNoEco, o.noEco)}${cell(T.oilWithEco, o.withEco)}</div>` : `<p class="ui-small">${T.oilBoxNone}</p>`}`;
+  box.hidden = false;
+  document.getElementById("oilBoxOpen").addEventListener("click", () => {
+    if (o) {
+      OIL.idx = OIL_DB.indexOf(o);
+      OIL.qty = qty;
+      if (oilValue(o, OIL.eco) == null) OIL.eco = !OIL.eco; // máy 2 cấp chỉ có cột "Có Eco"
+      saveOil();
+    }
+    showView("oil");
+  });
+}
+
+function renderOilView(){
+  const T = UI[LANG];
+  const sel = document.getElementById("oilModel");
+  const groups = [];
+  OIL_DB.forEach((o, i) => {
+    let g = groups.find(x => x.name === o.group);
+    if (!g) groups.push(g = { name: o.group, items: [] });
+    g.items.push(`<option value="${i}"${i === OIL.idx ? " selected" : ""}>${oilModelLabel(o)}</option>`);
+  });
+  sel.innerHTML = groups.map(g => `<optgroup label="${g.name}">${g.items.join("")}</optgroup>`).join("");
+  document.getElementById("oilNoEcoBtn").classList.toggle("active", !OIL.eco);
+  document.getElementById("oilEcoBtn").classList.toggle("active", OIL.eco);
+  const qEl = document.getElementById("oilQty"), mEl = document.getElementById("oilMargin");
+  if (document.activeElement !== qEl) qEl.value = OIL.qty;
+  if (document.activeElement !== mEl) mEl.value = OIL.margin;
+
+  const o = OIL_DB[OIL.idx];
+  const per = oilValue(o, OIL.eco);
+  const out = document.getElementById("oilResult");
+  if (per == null) {
+    out.innerHTML = `<div class="ui-alert ui-alert-warn">${uiIcon("triangle-alert")}<div class="ui-alert-body">${T.oilNoData(o.model, OIL.eco ? T.oilWithEco : T.oilNoEco)}</div></div>`;
+  } else {
+    const total = oilRound(per * OIL.qty * (1 + OIL.margin / 100));
+    out.innerHTML = `<div class="oil-readout">
+        <div class="readout-cell"><span class="readout-label">${T.oilPerUnit}</span><span class="readout-value">${fmtNum(per)}<small>${T.litre}</small></span></div>
+        <div class="readout-cell readout-cell-hero"><span class="readout-label">${uiIcon("droplets")}${T.oilTotal}</span><span class="readout-value" id="oilTotalValue">${fmtNum(total)}<small>${T.litre}</small></span></div>
+      </div>
+      <p class="ui-tiny ui-mono" style="margin-top:8px">${T.oilFormula(fmtNum(per), OIL.qty, fmtNum(OIL.margin))}</p>`;
+  }
+
+  document.getElementById("oilCount").textContent = String(OIL_DB.length);
+  document.getElementById("oilTable").innerHTML = `<thead><tr><th>${T.oilModel}</th><th>${T.oilSelCode}</th><th>${T.oilGroup}</th>
+      <th class="ui-num">${T.oilNoEco}</th><th class="ui-num">${T.oilWithEco}</th></tr></thead>
+    <tbody>${OIL_DB.map((x, i) => `<tr class="ui-row-link${i === OIL.idx ? " ui-row-hit" : ""}" data-oil-idx="${i}">
+      <td class="ui-mono">${x.model}</td><td class="ui-mono">${x.sel || "—"}</td><td>${x.group}</td>
+      <td class="ui-num">${fmtNum(x.noEco)}</td><td class="ui-num">${fmtNum(x.withEco)}</td></tr>`).join("")}</tbody>`;
+  document.querySelectorAll("#oilTable tr[data-oil-idx]").forEach(tr => tr.addEventListener("click", () => {
+    OIL.idx = parseInt(tr.dataset.oilIdx, 10); saveOil(); renderOilView();
+  }));
+}
+
+document.getElementById("oilModel").addEventListener("change", (e) => { OIL.idx = parseInt(e.target.value, 10) || 0; saveOil(); renderOilView(); });
+document.getElementById("oilNoEcoBtn").addEventListener("click", () => { OIL.eco = false; saveOil(); renderOilView(); });
+document.getElementById("oilEcoBtn").addEventListener("click", () => { OIL.eco = true; saveOil(); renderOilView(); });
+document.getElementById("oilQty").addEventListener("input", (e) => { OIL.qty = Math.max(1, parseInt(e.target.value, 10) || 1); saveOil(); renderOilView(); });
+document.getElementById("oilMargin").addEventListener("input", (e) => { OIL.margin = Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)); saveOil(); renderOilView(); });
+document.getElementById("qtyInput").addEventListener("input", () => { if (currentRenderedRec) renderOilBox(currentRenderedRec); });
+// Mở thẳng màn hình Dầu nạp từ link ngoài (vd. Toolkits): index.html#dau-nap
+if (location.hash === "#dau-nap") showView("oil");
 document.getElementById("clearCartBtn").addEventListener("click", clearCart);
 
 document.getElementById("addToReportBtn").addEventListener("click", () => {

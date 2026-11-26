@@ -11,7 +11,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="nasa-ui.css?v=4">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
@@ -26,6 +26,7 @@
     </button>
     <div class="ui-topbar-actions">
       <button id="installBtn" class="ui-btn ui-btn-sm ui-hide-mobile" type="button" hidden><i data-icon="download"></i><span data-i18n="install">Cài đặt app</span></button>
+      <button id="oilBtn" class="ui-btn ui-btn-sm ui-hide-mobile" type="button"><i data-icon="droplets"></i><span data-i18n="navOil">Dầu nạp</span></button>
       <button id="cartBtn" class="ui-btn ui-btn-sm ui-hide-mobile" type="button"><i data-icon="clipboard-list"></i><span data-i18n="navReport">Báo cáo</span><span id="cartBadge" class="ui-count">0</span></button>
       <button id="langBtn" class="ui-btn ui-btn-sm ui-btn-ghost" type="button" aria-label="Switch language"><i data-icon="languages"></i><span id="langLabel" class="ui-mono">EN</span></button>
     </div>
@@ -124,6 +125,8 @@
               </div>
             </div>
 
+            <div id="oilBox" class="oil-box" hidden></div>
+
             <hr class="ui-divider">
             <div class="add-to-report-row">
               <label class="ui-field"><span class="ui-label" data-i18n="qtyLabel">Số lượng</span>
@@ -135,6 +138,47 @@
 
           <div id="sections" class="ui-stack"></div>
         </section>
+      </section>
+    </div>
+  </div>
+
+  <!-- ============ Dầu nạp ============ -->
+  <div id="oilView" hidden>
+    <button type="button" id="backFromOilBtn" class="ui-btn-link ui-back"><i data-icon="arrow-left" class="ui-icon-sm"></i><span data-i18n="backToLookup">Quay lại tra cứu</span></button>
+    <div class="ui-page-head">
+      <div class="ui-page-head-text">
+        <h1 class="ui-title" data-i18n="oilTitle">Lượng dầu nạp máy nén</h1>
+        <p class="ui-subtitle" data-i18n="oilSub">Lượng dầu nạp lần đầu cho một bộ máy theo catalogue MYCOM, có hoặc không có bộ tiết kiệm (economizer).</p>
+      </div>
+    </div>
+
+    <div class="ui-split">
+      <aside class="ui-aside ui-stack">
+        <section class="ui-panel ui-panel-accent">
+          <h2 class="ui-section-title"><i data-icon="calculator"></i><span data-i18n="oilCalcTitle">Tính lượng dầu cần mua</span></h2>
+          <label class="ui-field" for="oilModel"><span class="ui-label" data-i18n="oilModel">Model máy nén</span>
+            <select id="oilModel" class="ui-select"></select></label>
+          <div class="ui-field">
+            <span class="ui-label" data-i18n="oilConfig">Cấu hình</span>
+            <div class="mode-toggle" role="group">
+              <button type="button" class="mode-btn active" id="oilNoEcoBtn"><span data-i18n="oilNoEco">Không Eco</span></button>
+              <button type="button" class="mode-btn" id="oilEcoBtn"><span data-i18n="oilWithEco">Có Eco</span></button>
+            </div>
+          </div>
+          <div class="ui-form-grid">
+            <label class="ui-field"><span class="ui-label" data-i18n="oilQty">Số máy</span>
+              <input type="number" id="oilQty" class="ui-input" inputmode="numeric" value="1" min="1" step="1"></label>
+            <label class="ui-field"><span class="ui-label" data-i18n="oilMargin">Dự phòng hao hụt (%)</span>
+              <input type="number" id="oilMargin" class="ui-input" inputmode="decimal" value="10" min="0" max="100" step="1"></label>
+          </div>
+          <div id="oilResult"></div>
+        </section>
+      </aside>
+
+      <section class="ui-panel">
+        <h2 class="ui-section-title"><i data-icon="table-2"></i><span data-i18n="oilTableTitle">Bảng dầu nạp (lít/bộ)</span><span class="ui-count-text" id="oilCount"></span></h2>
+        <div class="ui-table-wrap"><table class="ui-table ui-table-sticky-first" id="oilTable"></table></div>
+        <p class="ui-small" style="margin-top:10px" data-i18n="oilNote">Nguồn: catalogue dầu nạp MYCOM. Mã MCN… và mã series dùng ở phần chọn máy là cùng một máy. Đối chiếu catalogue/hướng dẫn lắp đặt trước khi đặt mua dầu.</p>
       </section>
     </div>
   </div>
@@ -215,11 +259,13 @@
 
 <nav class="ui-bottombar" aria-label="Menu">
   <button type="button" class="ui-bottombar-btn" id="navHome" aria-current="page"><span class="ui-bottombar-pill"><i data-icon="search"></i></span><span data-i18n="navLookup">Tra cứu</span></button>
+  <button type="button" class="ui-bottombar-btn" id="navOil"><span class="ui-bottombar-pill"><i data-icon="droplets"></i></span><span data-i18n="navOil">Dầu nạp</span></button>
   <button type="button" class="ui-bottombar-btn" id="navQuote"><span class="ui-bottombar-pill"><i data-icon="clipboard-list"></i><span class="ui-count" id="quoteCountMobile">0</span></span><span data-i18n="navReport">Báo cáo</span></button>
 </nav>
 
 <script src="icons.js"></script>
 <script src="data-io.js"></script>
+<script src="oil.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
