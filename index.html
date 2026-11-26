@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chọn máy nén MYCOM</title>
+<meta name="description" content="Chọn máy nén trục vít MYCOM (Mayekawa) theo điều kiện vận hành — hoạt động offline">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#171b20" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="nasa-ui.css?v=4">
+<link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+
+<header class="ui-topbar">
+  <div class="ui-topbar-inner">
+    <button type="button" class="ui-brand" id="homeBrand">
+      <span class="ui-app-icon"><i data-icon="cog"></i></span>
+      <span class="ui-brand-text">
+        <span class="ui-brand-title" data-i18n="appTitle">Chọn máy nén MYCOM</span>
+        <span class="ui-brand-sub" data-i18n="tagline">Máy nén trục vít MYCOM (Mayekawa)</span>
+      </span>
+    </button>
+    <div class="ui-topbar-actions">
+      <button id="installBtn" class="ui-btn ui-btn-sm ui-hide-mobile" type="button" hidden><i data-icon="download"></i><span data-i18n="install">Cài đặt app</span></button>
+      <button id="cartBtn" class="ui-btn ui-btn-sm ui-hide-mobile" type="button"><i data-icon="clipboard-list"></i><span data-i18n="navReport">Báo cáo</span><span id="cartBadge" class="ui-count">0</span></button>
+      <button id="langBtn" class="ui-btn ui-btn-sm ui-btn-ghost" type="button" aria-label="Switch language"><i data-icon="languages"></i><span id="langLabel" class="ui-mono">EN</span></button>
+    </div>
+  </div>
+</header>
+
+<main class="ui-main">
+
+  <!-- ============ Tra cứu ============ -->
+  <div id="lookupView">
+    <div class="ui-page-head">
+      <div class="ui-page-head-text">
+        <h1 class="ui-title" data-i18n="appTitle">Chọn máy nén MYCOM</h1>
+        <p class="ui-subtitle" data-i18n="emptySub">Toàn bộ dữ liệu đã được nhúng sẵn trong app — tra cứu không cần mạng.</p>
+      </div>
+    </div>
+
+    <div class="ui-split">
+      <aside class="ui-aside ui-stack">
+        <section class="ui-panel ui-panel-accent" aria-label="Selection">
+          <h2 class="ui-section-title"><i data-icon="search"></i><span data-i18n="conditionsTitle">Điều kiện tra cứu</span></h2>
+
+          <label class="ui-field" for="brandSelect" hidden><span class="ui-label"><span class="step">1</span><span data-i18n="stepBrand">Hãng sản xuất</span></span>
+            <select id="brandSelect" class="ui-select"><option value="" data-i18n="chooseBrand">— Chọn hãng —</option></select></label>
+          <label class="ui-field" for="refrigSelect"><span class="ui-label"><span class="step">1</span><span data-i18n="stepRefrig">Loại gas lạnh</span></span>
+            <select id="refrigSelect" class="ui-select" disabled><option value="" data-i18n="chooseRefrig">— Chọn gas —</option></select></label>
+          <label class="ui-field" for="condSelect"><span class="ui-label"><span class="step">2</span><span data-i18n="stepCond">Nhiệt độ ngưng tụ</span></span>
+            <select id="condSelect" class="ui-select" disabled><option value="" data-i18n="chooseCond">— Chọn nhiệt độ —</option></select></label>
+          <label class="ui-field" for="evapSelect"><span class="ui-label"><span class="step">3</span><span data-i18n="stepEvap">Nhiệt độ bay hơi</span></span>
+            <select id="evapSelect" class="ui-select" disabled><option value="" data-i18n="chooseEvap">— Chọn nhiệt độ —</option></select></label>
+
+          <div class="ui-field">
+            <span class="ui-label"><span class="step">4</span><span data-i18n="stepMode">Tra cứu theo</span></span>
+            <div class="mode-toggle" role="group">
+              <button type="button" class="mode-btn active" id="modeModelBtn"><i data-icon="box"></i><span data-i18n="modeByModel">Model máy nén</span></button>
+              <button type="button" class="mode-btn" id="modeCapBtn"><i data-icon="gauge"></i><span data-i18n="modeByCapacity">Công suất lạnh</span></button>
+            </div>
+          </div>
+
+          <label class="ui-field" id="modelPickField" for="modelSelect"><span class="ui-label"><span class="step">5</span><span data-i18n="stepModel">Model máy nén</span></span>
+            <select id="modelSelect" class="ui-select" disabled><option value="" data-i18n="chooseModel2">— Chọn model —</option></select></label>
+
+          <div class="ui-field" id="capacityPickField" hidden>
+            <label class="ui-label" for="capacityInput"><span class="step">5</span><span data-i18n="stepCapacityInput">Nhập công suất lạnh cần tìm (kW)</span></label>
+            <div class="capacity-input-row">
+              <input type="number" id="capacityInput" class="ui-input" inputmode="decimal" placeholder="150" disabled>
+              <button type="button" id="capacitySearchBtn" class="ui-btn ui-btn-primary" disabled><i data-icon="search"></i><span data-i18n="findBtn">Tìm</span></button>
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <section class="ui-stack">
+        <div id="emptyState" class="ui-panel ui-empty">
+          <div class="ui-empty-icon"><i data-icon="cog"></i></div>
+          <p data-i18n="emptyMain">Chọn gas → nhiệt độ ngưng tụ → nhiệt độ bay hơi, rồi tra theo model hoặc theo công suất lạnh.</p>
+        </div>
+
+        <div id="errorState" class="ui-panel ui-empty" hidden>
+          <div class="ui-empty-icon" style="color:var(--ui-warn-icon)"><i data-icon="triangle-alert"></i></div>
+          <p data-i18n="errorMain">Không tải được dữ liệu máy nén.</p>
+          <p class="ui-tiny ui-mono" id="errorDetail"></p>
+          <button id="retryBtn" class="ui-btn" type="button"><i data-icon="arrow-right"></i><span data-i18n="retry">Thử lại</span></button>
+        </div>
+
+        <section id="rankedList" class="ui-panel" hidden>
+          <h2 class="ui-section-title"><i data-icon="list"></i><span data-i18n="closestMatches">10 model gần nhất với công suất yêu cầu</span></h2>
+          <div id="rankedItems" class="ranked-items"></div>
+        </section>
+
+        <section id="result" class="ui-stack" hidden>
+          <div class="ui-panel ui-panel-accent readout">
+            <div class="readout-id">
+              <span id="rBrand" class="readout-brand">—</span>
+              <span id="rModel" class="readout-model">—</span>
+              <span id="rPort" class="ui-chip">—</span>
+            </div>
+            <div id="rWarn" class="ui-alert ui-alert-warn" hidden></div>
+            <div class="readout-grid">
+              <div class="readout-cell readout-cell-hero">
+                <span class="readout-label"><i data-icon="snowflake"></i><span data-i18n="capacity">Công suất lạnh</span></span>
+                <span class="readout-value"><span id="rCapKW">—</span><small>kW</small></span>
+                <span class="readout-value readout-value-sub"><span id="rCapTR">—</span><small>TR</small></span>
+              </div>
+              <div class="readout-cell">
+                <span class="readout-label"><i data-icon="zap"></i><span data-i18n="power">Công suất hấp thụ</span></span>
+                <span class="readout-value"><span id="rPower">—</span><small>kW</small></span>
+              </div>
+              <div class="readout-cell">
+                <span class="readout-label"><i data-icon="gauge"></i><span>COP</span></span>
+                <span class="readout-value"><span id="rCOP">—</span></span>
+              </div>
+              <div class="readout-cell">
+                <span class="readout-label"><i data-icon="thermometer"></i><span data-i18n="condEvap">Ngưng tụ / Bay hơi</span></span>
+                <span class="readout-value readout-value-small"><span id="rCondEvap">—</span><small>°C</small></span>
+              </div>
+            </div>
+
+            <hr class="ui-divider">
+            <div class="add-to-report-row">
+              <label class="ui-field"><span class="ui-label" data-i18n="qtyLabel">Số lượng</span>
+                <input type="number" id="qtyInput" class="ui-input" inputmode="numeric" value="1" min="1" step="1"></label>
+              <button type="button" id="addToReportBtn" class="ui-btn ui-btn-primary"><i data-icon="plus"></i><span data-i18n="addToReport">Thêm vào báo cáo</span></button>
+            </div>
+            <div id="addMsg"></div>
+          </div>
+
+          <div id="sections" class="ui-stack"></div>
+        </section>
+      </section>
+    </div>
+  </div>
+
+  <!-- ============ Báo cáo ============ -->
+  <div id="reportView" hidden>
+    <button type="button" id="backToLookupBtn" class="ui-btn-link ui-back"><i data-icon="arrow-left" class="ui-icon-sm"></i><span data-i18n="backToLookup">Quay lại tra cứu</span></button>
+    <div class="ui-page-head">
+      <div class="ui-page-head-text">
+        <h1 class="ui-title" data-i18n="reportTitle">Báo cáo thiết bị đã chọn</h1>
+      </div>
+    </div>
+
+    <div class="ui-split ui-split-end">
+      <section class="ui-stack">
+        <div class="ui-panel">
+          <h2 class="ui-section-title"><i data-icon="clipboard-list"></i><span data-i18n="cartTitle">Danh mục thiết bị</span><span class="ui-count-text" id="cartCountText"></span></h2>
+          <div id="cartEmpty" class="ui-empty">
+            <div class="ui-empty-icon"><i data-icon="clipboard-list"></i></div>
+            <p data-i18n="cartEmptyMain">Chưa có thiết bị nào trong báo cáo.</p>
+            <p class="ui-small" data-i18n="cartEmptySub">Quay lại tra cứu và bấm "Thêm vào báo cáo" ở kết quả bạn muốn đưa vào phiếu.</p>
+          </div>
+          <div id="cartItems" class="cart-items"></div>
+        </div>
+
+        <div class="ui-panel">
+          <h2 class="ui-section-title"><i data-icon="factory"></i><span data-i18n="projectInfoTitle">Thông tin dự án</span></h2>
+          <div class="ui-form-grid">
+            <label class="ui-field"><span class="ui-label" data-i18n="companyName">Đơn vị hỏi giá</span><input type="text" id="pCompany" class="ui-input"></label>
+            <label class="ui-field"><span class="ui-label" data-i18n="projectName">Tên dự án / công trình</span><input type="text" id="pProject" class="ui-input"></label>
+            <label class="ui-field"><span class="ui-label" data-i18n="preparerName">Người lập</span><input type="text" id="pPreparer" class="ui-input"></label>
+            <label class="ui-field"><span class="ui-label" data-i18n="preparerPhone">Số điện thoại</span><input type="tel" id="pPhone" class="ui-input"></label>
+            <label class="ui-field"><span class="ui-label" data-i18n="preparerEmail">Email</span><input type="email" id="pEmail" class="ui-input"></label>
+            <label class="ui-field"><span class="ui-label" data-i18n="installLocation">Địa điểm lắp đặt</span><input type="text" id="pLocation" class="ui-input"></label>
+            <label class="ui-field"><span class="ui-label" data-i18n="quoteDeadline">Hạn chót nhận báo giá</span><input type="date" id="pDeadline" class="ui-input"></label>
+          </div>
+          <hr class="ui-divider">
+          <h2 class="ui-section-title"><i data-icon="file-text"></i><span data-i18n="commercialTitle">Điều kiện thương mại</span></h2>
+          <div class="ui-form-grid">
+            <label class="ui-field"><span class="ui-label" data-i18n="deliveryTerms">Điều kiện giao hàng</span><input type="text" id="cDelivery" class="ui-input" placeholder="FOB / CIF / DAP ..."></label>
+            <label class="ui-field"><span class="ui-label" data-i18n="installIncluded">Kèm lắp đặt</span>
+              <select id="cInstall" class="ui-select">
+                <option value="" data-i18n="optNotSpecified">— Chưa xác định —</option>
+                <option value="yes" data-i18n="optYes">Có</option>
+                <option value="no" data-i18n="optNo">Không</option>
+              </select></label>
+            <label class="ui-field"><span class="ui-label" data-i18n="warrantyReq">Yêu cầu bảo hành</span><input type="text" id="cWarranty" class="ui-input"></label>
+          </div>
+        </div>
+      </section>
+
+      <aside class="ui-aside ui-stack">
+        <div class="ui-panel ui-panel-accent">
+          <h2 class="ui-section-title"><i data-icon="file-down"></i><span data-i18n="exportTitle">Phiếu yêu cầu báo giá</span></h2>
+          <div class="ui-stack" style="gap:10px">
+            <button type="button" id="exportPrintBtn" class="ui-btn ui-btn-primary ui-btn-block"><i data-icon="printer"></i><span data-i18n="exportPrint">In / Lưu PDF</span></button>
+            <button type="button" id="exportWordBtn" class="ui-btn ui-btn-block"><i data-icon="file-text"></i><span data-i18n="exportWord">Xuất file Word (.doc)</span></button>
+            <button type="button" id="exportCsvBtn" class="ui-btn ui-btn-block"><i data-icon="file-spreadsheet"></i><span data-i18n="exportCsv">Xuất file CSV (Excel)</span></button>
+          </div>
+        </div>
+        <div class="ui-panel">
+          <div class="ui-btn-row">
+            <button type="button" id="dataExportBtn" class="ui-btn" style="flex:1"><i data-icon="download"></i><span data-i18n="dataExport">Xuất dữ liệu</span></button>
+            <button type="button" id="dataImportBtn" class="ui-btn" style="flex:1"><i data-icon="upload"></i><span data-i18n="dataImport">Nhập dữ liệu</span></button>
+          </div>
+          <button type="button" id="clearCartBtn" class="ui-btn ui-btn-danger ui-btn-block" style="margin-top:10px"><i data-icon="trash-2"></i><span data-i18n="clearAll">Xoá tất cả</span></button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+</main>
+
+<footer class="ui-foot">
+  <p class="ui-small" style="font-family:var(--ui-sans);max-width:720px;margin:0 auto 6px;padding:0 16px" data-i18n="footer">Dữ liệu trích xuất từ catalogue do người dùng cung cấp · Chỉ dùng để tham khảo, đối chiếu với catalogue gốc trước khi chọn máy.</p>
+  <span>build <span id="buildVersion">—</span></span>
+</footer>
+
+<nav class="ui-bottombar" aria-label="Menu">
+  <button type="button" class="ui-bottombar-btn" id="navHome" aria-current="page"><span class="ui-bottombar-pill"><i data-icon="search"></i></span><span data-i18n="navLookup">Tra cứu</span></button>
+  <button type="button" class="ui-bottombar-btn" id="navQuote"><span class="ui-bottombar-pill"><i data-icon="clipboard-list"></i><span class="ui-count" id="quoteCountMobile">0</span></span><span data-i18n="navReport">Báo cáo</span></button>
+</nav>
+
+<script src="icons.js"></script>
+<script src="data-io.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

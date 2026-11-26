@@ -1,0 +1,150 @@
+/* =====================================================================
+   MYCOMselect — phần riêng của app. Giao diện chung nằm ở nasa-ui.css.
+   App này chỉ đặt màu nhấn (đỏ) và vài chi tiết riêng: số bước chọn,
+   nút chuyển chế độ tra, ô thông số chính, nhóm thông số thu gọn được,
+   danh sách model gần nhất, thẻ thiết bị trong báo cáo.
+   ===================================================================== */
+
+:root {
+  --ui-accent: #d0021b;
+  --ui-accent-hover: #b30017;
+  --ui-on-accent: #ffffff;
+  --ui-accent-text: #b8001a;
+  --ui-accent-soft: #fdeaec;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ui-accent: #ff4d5e;
+    --ui-accent-hover: #ff6b79;
+    --ui-on-accent: #2a0006;
+    --ui-accent-text: #ff7a87;
+    --ui-accent-soft: #33161a;
+  }
+}
+
+/* Số bước 1–6 trước nhãn ô chọn */
+.ui-label .step {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; margin-right: 8px;
+  border-radius: 6px; background: var(--ui-accent-soft); color: var(--ui-accent-text);
+  font-family: var(--ui-mono); font-size: 0.72rem; font-weight: 700;
+}
+.ui-select:disabled, .ui-input:disabled { opacity: 0.5; cursor: not-allowed; }
+.ui-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Nút chuyển chế độ tra (dạng segmented control) */
+.mode-toggle {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+  padding: 4px; border-radius: var(--ui-radius-sm);
+  background: var(--ui-surface-2); border: 1px solid var(--ui-border);
+}
+.mode-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 38px; padding: 0 8px;
+  border: 0; border-radius: 6px; background: transparent; cursor: pointer;
+  color: var(--ui-muted); font: inherit; font-size: 0.86rem; font-weight: 600;
+}
+.mode-btn .ui-icon { width: 16px; height: 16px; }
+.mode-btn.active { background: var(--ui-surface); color: var(--ui-text); box-shadow: var(--ui-shadow-sm); border: 1px solid var(--ui-border); }
+
+.capacity-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+
+/* Huy hiệu hãng (chữ trắng trên màu riêng từng hãng) */
+.brand-tag {
+  display: inline-flex; align-items: center;
+  padding: 2px 9px; border-radius: 999px;
+  color: #fff; font-size: 0.74rem; font-weight: 700; white-space: nowrap;
+}
+
+/* Danh sách model gần nhất */
+.ranked-items { display: flex; flex-direction: column; gap: 8px; }
+.ranked-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--ui-border); border-radius: var(--ui-radius);
+  background: var(--ui-surface); cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.ranked-item:hover { border-color: var(--ui-border-strong); background: var(--ui-surface-2); }
+.ranked-rank {
+  flex: none; width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 8px; background: var(--ui-surface-2); border: 1px solid var(--ui-border);
+  font-family: var(--ui-mono); font-size: 0.8rem; font-weight: 700; color: var(--ui-muted);
+}
+.ranked-item:first-child .ranked-rank { background: var(--ui-accent); border-color: var(--ui-accent); color: var(--ui-on-accent); }
+.ranked-main { flex: 1; min-width: 0; }
+.ranked-model { font-family: var(--ui-mono); font-weight: 700; word-break: break-word; }
+.ranked-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 3px; font-size: 0.78rem; color: var(--ui-muted); }
+.ranked-cap { flex: none; text-align: right; }
+.ranked-cap-value { font-family: var(--ui-mono); font-weight: 700; color: var(--ui-accent-text); }
+.ranked-cap-diff { font-size: 0.74rem; color: var(--ui-muted); }
+@media (max-width: 480px) {
+  .ranked-item { flex-wrap: wrap; }
+  .ranked-cap { text-align: left; }
+}
+
+/* Ô kết quả chính */
+.readout-id { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 14px; }
+.readout-brand { width: 100%; }
+.readout-model { font-family: var(--ui-mono); font-size: 1.45rem; font-weight: 700; letter-spacing: -0.01em; }
+.readout .ui-alert { margin: 0 0 14px; }
+.readout-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 900px) { .readout-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.readout-cell {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 14px; min-width: 0;
+  background: var(--ui-surface-2); border-radius: var(--ui-radius);
+}
+.readout-cell-hero { background: var(--ui-accent-soft); }
+.readout-label { display: flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 600; color: var(--ui-muted); }
+.readout-label .ui-icon { width: 15px; height: 15px; color: var(--ui-accent-text); }
+.readout-value { font-family: var(--ui-mono); font-size: 1.5rem; font-weight: 700; line-height: 1.1; }
+.readout-cell-hero .readout-value:first-of-type { color: var(--ui-accent-text); }
+.readout-value small { margin-left: 4px; font-size: 0.75rem; font-weight: 600; color: var(--ui-muted); }
+.readout-value-sub { font-size: 1rem; }
+.readout-value-small { font-size: 1.1rem; }
+.add-to-report-row { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; align-items: end; }
+.add-to-report-row .ui-field { margin: 0; }
+
+/* Nhóm thông số chi tiết (bấm tiêu đề để thu gọn) */
+.param-section { padding: 0; overflow: hidden; }
+.param-section-head {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 14px 18px; border: 0; background: none; cursor: pointer;
+  color: var(--ui-text); font: inherit; font-weight: 700; text-align: left;
+}
+.param-section-head .ui-icon { color: var(--ui-accent-text); }
+.param-section-head .chev { margin-left: auto; color: var(--ui-faint); transition: transform 0.15s; }
+.param-section.collapsed .chev { transform: rotate(-90deg); }
+.param-section.collapsed .param-grid { display: none; }
+.param-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  gap: 1px; background: var(--ui-border); border-top: 1px solid var(--ui-border);
+}
+.param { display: flex; flex-direction: column; gap: 2px; padding: 10px 16px; background: var(--ui-surface); min-width: 0; }
+.param-label { font-size: 0.76rem; color: var(--ui-muted); line-height: 1.3; }
+.param-value { font-family: var(--ui-mono); font-weight: 600; word-break: break-word; }
+.param-value small { margin-left: 3px; font-size: 0.75rem; font-weight: 400; color: var(--ui-muted); }
+
+/* Thẻ thiết bị trong báo cáo */
+.cart-items { display: flex; flex-direction: column; gap: 12px; }
+.cart-item {
+  padding: 14px;
+  border: 1px solid var(--ui-border); border-radius: var(--ui-radius);
+  background: var(--ui-surface-2);
+}
+.cart-item-head { display: flex; align-items: flex-start; gap: 12px; }
+.cart-item-no {
+  flex: none; width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 8px; background: var(--ui-surface); border: 1px solid var(--ui-border);
+  font-family: var(--ui-mono); font-size: 0.8rem; font-weight: 700; color: var(--ui-muted);
+}
+.cart-item-main { flex: 1; min-width: 0; }
+.cart-item-title { font-family: var(--ui-mono); font-weight: 700; word-break: break-word; }
+.cart-item-conditions { margin-top: 6px; font-size: 0.8rem; color: var(--ui-muted); line-height: 1.5; }
+.cart-item-fields { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; margin: 12px 0 0 40px; }
+.cart-item-fields .ui-field { margin: 0; }
+.cart-item-fields .ui-textarea { min-height: 44px; }
+@media (max-width: 480px) { .cart-item-fields { margin-left: 0; grid-template-columns: 1fr; } }
