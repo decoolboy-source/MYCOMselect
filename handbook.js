@@ -1,5 +1,5 @@
 /* handbook.js — Engine tab "Sổ tay" (dùng chung được giữa các app chọn thiết bị).
-   Cần có trước: icons.js (uiIcon), handbook-data.js (HB_GROUPS, HB_CARDS, HB_MAINT; tuỳ chọn HB_THR).
+   Cần có trước: icons.js (uiIcon), handbook-data.js (HB_GROUPS, HB_CARDS, HB_MAINT; tuỳ chọn HB_THR, HB_COC).
    App gọi:  HB.init({ prefix: "MYCOMselect:" })  một lần,  HB.render(lang)  mỗi khi mở tab / đổi ngôn ngữ.
    Trang cần các phần tử: #hbSearch, #hbFilters, #hbCards, #hbCount. */
 const HB = (() => {
@@ -15,6 +15,12 @@ const HB = (() => {
           thrTotal: "Nhiệt thải ra dàn ngưng", thrFactor: "Hệ số hiệu chỉnh", thrBase: "Năng suất danh định cần chọn",
           thrRange: (a, b, c, d) => `Ngoài bảng hệ số: nhiệt độ ngưng ${a}–${b} °C, bầu ướt ${c}–${d} °C (ô trống trong bảng = dàn không đạt điều kiện này).`,
           thrBooster: "Máy booster (ngưng ở ~2 °C) xả vào bình trung gian; nhiệt của nó do máy tầm cao mang ra dàn ngưng, nên không cộng vào đây.",
+          cocEvap: "Lượng nước bay hơi (m³/h)", cocFromThr: (kw, v) => `Ước tính từ nhiệt thải ${kw} kW ở thẻ trên ≈ ${v} m³/h (≈ 1,5 L/h cho mỗi kW). Nên lấy số chính xác trong datasheet của dàn.`,
+          cocParam: "Chỉ tiêu", cocMake: "Nước cấp", cocLimit: "Giới hạn", cocCoc: "Số lần cô đặc",
+          cocMin: "Số chu kỳ cô đặc cho phép", cocBleed: "Lượng xả đáy", cocMakeup: "Nước bổ sung",
+          cocBad: "Nước cấp đã vượt giới hạn ở chỉ tiêu được tô đậm (số lần cô đặc ≤ 1): phải xử lý nước cấp trước, xả đáy không cứu được.",
+          cocNone: "Nhập ít nhất một chỉ tiêu của nước cấp.",
+          cocNote: "Xả đáy = bay hơi / (số chu kỳ − 1); nước bổ sung = bay hơi + xả đáy (đã gồm phần nước bị gió cuốn). Ô để trống thì bỏ qua chỉ tiêu đó. Kết quả phân tích thay đổi theo mùa — làm lại khi có kết quả mới.",
           thrNote: "So năng suất danh định này với cột Base heat rejection (kW) của catalogue BAC VXC. Hãng khác có bảng hệ số riêng — tra lại theo catalogue hãng trước khi chốt." },
     en: { all: "All", src: "Source", none: "No matching items.", hours: "Current run hours (h)", type: "Machine type",
           task: "Task", last: "Last milestone", next: "Next milestone", left: "Remaining", due: "Due", soon: "Soon",
@@ -27,6 +33,12 @@ const HB = (() => {
           thrTotal: "Heat rejected to condenser", thrFactor: "Correction factor", thrBase: "Base capacity to select",
           thrRange: (a, b, c, d) => `Outside the factor table: condensing ${a}–${b} °C, wet bulb ${c}–${d} °C (blank cells = condition not reachable).`,
           thrBooster: "Booster units (condensing at ~2 °C) discharge to the intercooler; their heat reaches the condenser through the high stage, so it is not added here.",
+          cocEvap: "Evaporation rate (m³/h)", cocFromThr: (kw, v) => `Estimated from the ${kw} kW heat rejection in the card above ≈ ${v} m³/h (≈ 1.5 L/h per kW). Prefer the exact value from the unit datasheet.`,
+          cocParam: "Parameter", cocMake: "Make-up", cocLimit: "Limit", cocCoc: "Concentration ratio",
+          cocMin: "Allowed cycles of concentration", cocBleed: "Bleed-off", cocMakeup: "Make-up water",
+          cocBad: "Make-up water already exceeds the limit for the highlighted parameter (ratio ≤ 1): treat the make-up water first; bleed cannot fix it.",
+          cocNone: "Enter at least one make-up water parameter.",
+          cocNote: "Bleed = evaporation / (cycles − 1); make-up = evaporation + bleed (drift included). Blank fields are skipped. Analyses vary by season — redo with each new result.",
           thrNote: "Compare this base capacity with the Base heat rejection (kW) column of the BAC VXC catalogue. Other makers use their own factor tables — check the maker's catalogue before finalising." },
   };
   let prefix = "app:";
@@ -37,6 +49,7 @@ const HB = (() => {
   let maint = { type: "screw", hours: 0 };
   let ticks = {};
   let thr = { q: 1000, p: 300, oil: 0, oilOut: false, tc: 35, wb: 27, pick: "" };
+  let coc = { evap: "", vals: {} };
 
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const tx = (x) => x == null ? "" : Array.isArray(x) ? (lang === "vi" ? x[0] : x[1]) : String(x);
@@ -188,6 +201,48 @@ const HB = (() => {
     save("hbThr", thr);
   }
 
+  // ---------- Máy tính chu kỳ cô đặc nước dàn ngưng (dữ liệu HB_COC) ----------
+  const thrTotal = () => Math.max(0, thr.q + thr.p - (thr.oilOut ? thr.oil : 0));
+  const evapAuto = () => Math.round(thrTotal() * HB_COC.m3hPerKw * 100) / 100;
+  const fmtN = (n, d) => n.toLocaleString(lang === "vi" ? "vi-VN" : "en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  function renderCocOut(){
+    const S = STR[lang];
+    const E = coc.evap === "" ? evapAuto() : num(coc.evap);
+    const rows = HB_COC.params.map(pr => {
+      const raw = coc.vals[pr.k];
+      const v = raw === "" || raw == null ? null : num(raw);
+      return { pr, v, r: v && v > 0 ? pr.limit / v : null };
+    });
+    const used = rows.filter(x => x.r != null);
+    if (!used.length) return `<p class="ui-tiny hb-note">${esc(S.cocNone)}</p>`;
+    const min = Math.min(...used.map(x => x.r));
+    const table = `<div class="ui-table-wrap"><table class="ui-table hb-table"><thead><tr><th>${esc(S.cocParam)}</th><th class="ui-num">${esc(S.cocMake)}</th><th class="ui-num">${esc(S.cocLimit)}</th><th class="ui-num">${esc(S.cocCoc)}</th></tr></thead><tbody>
+      ${used.map(x => `<tr class="${x.r === min ? "hb-due" : ""}"><td class="hb-td-first">${esc(tx(x.pr.name))} <span class="ui-tiny">${esc(x.pr.unit)}</span></td>
+        <td class="ui-num">${fmtN(x.v, 1)}</td><td class="ui-num">${fmtN(x.pr.limit, 0)}</td><td class="ui-num">${fmtN(x.r, 1)}</td></tr>`).join("")}</tbody></table></div>`;
+    if (min <= 1) return `${table}<div class="ui-alert ui-alert-warn">${uiIcon("triangle-alert")}<div class="ui-alert-body">${esc(S.cocBad)}</div></div>`;
+    const bleed = E / (min - 1);
+    const stat = (label, val, icon) => `<div class="ui-stat"><span class="ui-stat-label">${uiIcon(icon)}${esc(label)}</span><span class="ui-stat-value">${val}</span></div>`;
+    return `${table}<div class="ui-stats hb-thr-stats">
+        ${stat(S.cocMin, fmtN(min, 1), "layers")}
+        ${stat(S.cocBleed, `${fmtN(bleed, 2)} <small>m³/h</small>`, "droplets")}
+        ${stat(S.cocMakeup, `${fmtN(E + bleed, 2)} <small>m³/h</small>`, "waves")}
+      </div>`;
+  }
+  function renderCoc(){
+    const S = STR[lang];
+    if (typeof HB_COC === "undefined") return "";
+    const field = (k, label, val, ph) => `<label class="ui-field"><span class="ui-label">${esc(label)}</span>
+        <input type="number" class="ui-input" data-hb-coc="${k}" inputmode="decimal" step="any" min="0" value="${esc(val)}"${ph != null ? ` placeholder="${esc(ph)}"` : ""}></label>`;
+    return `<div class="hb-thr">
+      <div class="ui-form-grid">
+        ${field("evap", S.cocEvap, coc.evap, fmtN(evapAuto(), 2))}
+        ${HB_COC.params.map(pr => field(pr.k, `${tx(pr.name)} (${pr.unit})`, coc.vals[pr.k] == null ? "" : coc.vals[pr.k])).join("")}
+      </div>
+      <p class="ui-tiny hb-note" id="hbCocAuto"${coc.evap === "" ? "" : " hidden"}>${esc(S.cocFromThr(fmt(thrTotal()), fmtN(evapAuto(), 2)))}</p>
+      <div id="hbCocOut" class="hb-thr">${renderCocOut()}</div>
+      <p class="ui-tiny hb-note">${esc(S.cocNote)}</p></div>`;
+  }
+
   function renderChecklist(b){
     const S = STR[lang];
     const st = ticks[b.id] || {};
@@ -210,6 +265,7 @@ const HB = (() => {
       case "maint": return renderMaint();
       case "checklist": return renderChecklist(b);
       case "thr": return renderThr();
+      case "coc": return renderCoc();
       default: return "";
     }
   }
@@ -236,12 +292,27 @@ const HB = (() => {
         <p class="ui-tiny hb-src">${uiIcon("book-open", "ui-icon-sm")}${esc(S.src)}: ${esc(c.src)}</p></div></details>`).join("");
   }
 
+  // Cập nhật phần kết quả nước (khi đổi số ở thẻ nhiệt thải hoặc ở chính thẻ nước) mà không vẽ lại ô nhập.
+  function refreshCoc(){
+    const out = document.getElementById("hbCocOut");
+    if (!out) return;
+    out.innerHTML = renderCocOut();
+    const S = STR[lang];
+    const ev = document.querySelector('[data-hb-coc="evap"]');
+    if (ev) ev.placeholder = fmtN(evapAuto(), 2);
+    const note = document.getElementById("hbCocAuto");
+    if (note) { note.hidden = coc.evap !== ""; note.textContent = S.cocFromThr(fmt(thrTotal()), fmtN(evapAuto(), 2)); }
+  }
+
   function init(opts){
     prefix = (opts && opts.prefix) || prefix;
     maint = load("hbMaint", maint);
     if (!HB_MAINT[maint.type]) maint.type = Object.keys(HB_MAINT)[0];
     ticks = load("hbChecks", {});
     thr = load("hbThr", thr);
+    coc = load("hbCoc", coc);
+    if (!coc.vals || typeof coc.vals !== "object") coc.vals = {};
+    if (typeof HB_COC !== "undefined" && !Object.keys(coc.vals).length) HB_COC.params.forEach(pr => { if (pr.example != null) coc.vals[pr.k] = String(pr.example); });
 
     document.getElementById("hbSearch").addEventListener("input", (e) => { query = e.target.value; render(); });
     const root = document.getElementById("hbView");
@@ -269,6 +340,13 @@ const HB = (() => {
         thr[tk] = num(e.target.value); thr.pick = ""; save("hbThr", thr);
         const pk = document.getElementById("hbThrPick"); if (pk) pk.value = "";
         document.getElementById("hbThrOut").innerHTML = renderThrOut();
+        refreshCoc();
+      }
+      const ck = e.target.dataset && e.target.dataset.hbCoc;
+      if (ck) {
+        if (ck === "evap") coc.evap = e.target.value.trim(); else coc.vals[ck] = e.target.value.trim();
+        save("hbCoc", coc);
+        refreshCoc();
       }
     });
     root.addEventListener("change", (e) => {

@@ -14,6 +14,7 @@
        { type: "maint" }                        máy tính mốc bảo trì (dữ liệu HB_MAINT)
        { type: "checklist", id, groups }        danh sách tick, lưu trong localStorage
        { type: "thr" }                          máy tính nhiệt thải ra dàn ngưng (dữ liệu HB_THR, đọc giỏ chọn)
+       { type: "coc" }                          máy tính chu kỳ cô đặc / xả đáy nước dàn ngưng (dữ liệu HB_COC)
    Nguồn: tài liệu tiếng Việt của Mayekawa Việt Nam (bảo trì trục vít / piston, cập nhật 2020),
    form ghi thông số vận hành và checklist chạy thử MYCOM. Chỉ tóm tắt số liệu, không chép tài liệu gốc. */
 
@@ -599,6 +600,78 @@ const HB_CARDS = [
                                             "Too low a condensing pressure is also bad for screw compressors: oil supply pressure and liquid feed differential fall. In cool weather hold a minimum condensing pressure by reducing fans, not by stopping the spray pump."] },
     ],
   },
+  {
+    id: "sys-water", group: "system", icon: "droplets",
+    title: ["Nước dàn ngưng bay hơi: giới hạn, xả đáy, xử lý", "Evaporative condenser water: limits, bleed-off, treatment"],
+    src: "Güntner/ECOSS TB-003, TB-004 (2018); Evapco Bulletin 153E ATC-E (2020)",
+    blocks: [
+      { type: "p", text: ["Dàn ngưng thải nhiệt bằng cách cho nước bay hơi. Hơi nước đi ra là nước sạch, còn muối và cặn ở lại trong bể nên nước bể đặc dần. Nếu không xả bớt, cáu cặn bám ống làm áp suất ngưng tăng; nước nhiều clorua còn gây ăn mòn lỗ trên ống inox.",
+                          "The condenser rejects heat by evaporating water. The vapour leaves as pure water while salts stay in the sump, so the water gets more concentrated. Without bleed-off, scale builds on the coil and raises condensing pressure; chloride-rich water also pits stainless coils."] },
+      { type: "table",
+        head: [["Chỉ tiêu nước tuần hoàn", "Circulating water parameter"], ["Giới hạn", "Limit"]],
+        rows: [
+          ["pH", ["6,5 – 9,0 (dàn inox); 6,5 – 8,0 (dàn mạ kẽm)", "6.5 – 9.0 (stainless); 6.5 – 8.0 (galvanised)"]],
+          [["Độ kiềm tổng (ppm CaCO₃)", "Total alkalinity (ppm CaCO₃)"], "750"],
+          [["Độ cứng canxi (ppm CaCO₃)", "Calcium hardness (ppm CaCO₃)"], "500"],
+          [["Clorua (ppm Cl⁻)", "Chlorides (ppm Cl⁻)"], ["100 (tương đương 250 ppm NaCl)", "100 (= 250 ppm as NaCl)"]],
+          [["Silica hoà tan (ppm SiO₂)", "Soluble silica (ppm SiO₂)"], "150"],
+          [["Sunfat (ppm SO₄)", "Sulphates (ppm SO₄)"], "250"],
+          [["Tổng chất rắn hoà tan TDS (ppm)", "Total dissolved solids (ppm)"], "1500"],
+          [["Độ dẫn điện (µS/cm)", "Conductivity (µS/cm)"], "3000"],
+        ],
+        note: ["Giới hạn theo ECOSS (dàn inox). Mức pH cho dàn mạ kẽm theo Evapco. Hãng khác có thể khác — xem tài liệu của dàn đang dùng.",
+               "Limits from ECOSS (stainless units). pH range for galvanised units from Evapco. Other makers may differ — check the unit's manual."] },
+      { type: "p", text: ["Máy tính dưới đây lấy kết quả phân tích nước cấp, tính số lần mỗi chỉ tiêu được phép cô đặc (giới hạn / nước cấp). Chỉ tiêu có số nhỏ nhất quyết định số chu kỳ cô đặc và lượng xả đáy. Số điền sẵn là mẫu nước trong ví dụ của ECOSS; lượng bay hơi tự ước tính từ thẻ nhiệt thải nếu để trống.",
+                          "The calculator takes the make-up water analysis and works out how many times each parameter may concentrate (limit / make-up). The smallest value sets the cycles of concentration and the bleed-off. Pre-filled values are the ECOSS example water; evaporation is estimated from the heat rejection card when left blank."] },
+      { type: "coc" },
+      { type: "alert", tone: "info", text: ["Ví dụ ECOSS: silica giới hạn ở 3,1 chu kỳ; bay hơi 2,55 m³/h. Tài liệu tính xả đáy = 2,55 / 3,1 = 0,82 m³/h, nhưng công thức cân bằng muối đúng là 2,55 / (3,1 − 1) ≈ 1,23 m³/h. App dùng công thức đúng nên ra số lớn hơn.",
+                                            "ECOSS example: silica limits to 3.1 cycles; evaporation 2.55 m³/h. The document gives bleed = 2.55 / 3.1 = 0.82 m³/h, but the salt balance gives 2.55 / (3.1 − 1) ≈ 1.23 m³/h. The app uses the correct formula, so it shows the larger value."] },
+      { type: "list", items: [
+        ["Thuê đơn vị xử lý nước lập chương trình riêng theo nguồn nước và vật liệu dàn; kiểm tra chỉ tiêu và liều hoá chất hằng tháng.", "Have a water treatment company design a programme for the water source and unit materials; check parameters and dosing monthly."],
+        ["Hoá chất phải hợp với inox và nhôm của dàn: ECOSS yêu cầu không chứa hợp chất gốc clo, brom, iot.", "Chemicals must suit the unit's stainless steel and aluminium: ECOSS requires them free of chlorine, bromine and iodine compounds."],
+        ["Châm hoá chất liên tục theo định lượng; không đổ theo mẻ vì không kiểm soát được nồng độ. Nếu dùng axit phải định lượng chính xác.", "Dose chemicals continuously; batch feeding gives poor control. Acid, if used, must be accurately metered."],
+        ["Dàn mạ kẽm: thụ động hoá khi chạy thử để tránh \"rỉ trắng\"; pH ≥ 8,3 phải thụ động hoá định kỳ; pH < 6,0 dù ngắn cũng làm mất lớp kẽm.", "Galvanised units: passivate at start-up against white rust; pH ≥ 8.3 needs periodic passivation; pH < 6.0 even briefly strips the zinc."],
+        ["Kiểm soát vi sinh (rêu, nấm, Legionella) bằng chất diệt khuẩn và vệ sinh cơ học; giữ tấm chắn bụi nước còn tốt.", "Control biology (algae, slime, Legionella) with biocides and mechanical cleaning; keep drift eliminators in good condition."],
+        ["Áp lực nước cấp vào phao khoảng 1,4 – 3,4 bar (20 – 50 psig).", "Make-up water pressure at the float valve about 1.4 – 3.4 bar (20 – 50 psig)."],
+      ] },
+    ],
+  },
+  {
+    id: "sys-commission", group: "system", icon: "list-checks",
+    title: ["Checklist chạy thử dàn ngưng bay hơi", "Evaporative condenser start-up checklist"],
+    src: "Güntner/ECOSS RQ-177 Checklist for start-up (V4, 2018); BAC — chương trình bảo trì VXC",
+    blocks: [
+      { type: "p", text: ["Làm cùng lúc với checklist chạy thử máy nén. Mỗi mục ghi kèm rủi ro nếu bỏ qua. Trạng thái tick được lưu trên máy này.",
+                          "Do it together with the compressor commissioning checklist. Each item notes the risk if skipped. Ticks are saved on this device."] },
+      { type: "checklist", id: "sys-commission", groups: [
+        { title: ["Phần bể nước (module dưới)", "Basin (bottom module)"], items: [
+          ["Đường nước cấp, xả đáy, tràn, xả cặn đấu đúng — tránh thiếu nước, đọng nước quanh dàn, tăng cặn", "Make-up, drain, overflow and bleed lines connected — avoids water shortage, ponding, sediment"],
+          ["Phao cấp nước lắp đúng, chỉnh đúng mức nước — mức thấp làm bơm hút khí, hỏng cánh bơm", "Float valve fitted and level set — low level makes the pump cavitate and damages the impeller"],
+          ["Đặt lưu lượng xả đáy theo máy tính chu kỳ cô đặc — xả thiếu làm nước đặc, cáu cặn ống", "Set bleed-off from the cycles calculator — too little bleed concentrates water and scales the coil"],
+          ["Bơm phun: chiều quay đúng, ghi dòng điện — lưu lượng thấp làm áp suất ngưng tăng, nhảy aptomat", "Spray pump: rotation correct, record current — low flow raises condensing pressure and trips breakers"],
+          ["Lưới lọc hút bơm sạch, không vật lạ — tránh tắc béc, hỏng bơm", "Pump suction strainer clean, no debris — avoids blocked nozzles and pump damage"],
+          ["Tấm che cửa gió vào (louver) lắp đủ — tránh văng nước, nắng chiếu tạo rêu", "Air inlet louvers all fitted — prevents splash-out and algae from sunlight"],
+          ["Vỏ dàn không rò nước; inox được che chắn khi hàn/cắt ống thép gần đó — mạt sắt gây rỉ bề mặt", "No casing leaks; stainless protected from steel particles during nearby welding/cutting — iron dust causes surface rust"],
+          ["Lấy mẫu nước cấp gửi phân tích; có đơn vị xử lý nước và biết thành phần hoá chất dùng", "Make-up water sampled for lab analysis; water treatment company appointed and chemicals known"],
+        ] },
+        { title: ["Phần quạt – phân phối nước (module trên)", "Fan and distribution (upper module)"], items: [
+          ["Tủ điều khiển, chương trình điều khiển quạt đấu nối đúng", "Controller and fan control programme wired correctly"],
+          ["Quạt chạy đúng chiều; dây đai căng đúng (căng lại sau 24 h đầu, sau đó hằng tháng)", "Fans run the right way; belts tensioned (re-tension after the first 24 h, then monthly)"],
+          ["Cửa thăm/quạt mở được để vào kiểm tra hệ phân phối nước", "Access doors / fan panels open for reaching the distribution system"],
+          ["Tấm chắn bụi nước lắp đúng chiều, kín khe — tránh nước bị cuốn ra, đóng cặn cánh quạt", "Drift eliminators correctly oriented, no gaps — avoids drift and scale on fans"],
+          ["Béc phun đủ, đúng vị trí, không tắc, không rò ở khớp nối; nước phủ đều toàn bộ ống", "Nozzles all present, positioned, clear, no leaking joints; water covers the whole coil"],
+          ["Thang, lan can lắp theo hướng dẫn hãng", "Ladder and guardrail installed per maker's instructions"],
+        ] },
+        { title: ["Đường môi chất và điều khiển", "Refrigerant piping and control"], items: [
+          ["Ống môi chất đi đúng tiêu chuẩn, có giá đỡ, không treo tải lên cổ nối dàn", "Refrigerant piping to standard, supported, no loads on unit connections"],
+          ["Ống chân dịch có xi phông và giá đỡ; có ống cân bằng về bình cao áp khi nhiều dàn song song — tránh ngập dàn", "Drop legs trapped and supported; equaliser to receiver for parallel units — prevents coil flooding"],
+          ["Có điểm xả khí không ngưng ở đầu ra từng dàn / bình cao áp", "Non-condensable purge points at each unit outlet / receiver"],
+          ["Cảm biến áp suất điều khiển quạt đặt đúng chỗ, đấu đúng; kiểm tra setpoint", "Fan control pressure sensor in the right place and wired; setpoint checked"],
+          ["Chụp ảnh lưu hồ sơ phần đường ống và đấu nối", "Photograph piping and connections for the record"],
+        ] },
+      ] },
+    ],
+  },
 ];
 
 /* Máy tính mốc bảo trì.
@@ -647,5 +720,20 @@ const HB_THR = {
     [0.54, 0.57, 0.59, 0.62, 0.65, 0.67, 0.69, 0.72, 0.74, 0.80, 0.88, 0.98],
     [0.50, 0.52, 0.54, 0.56, 0.59, 0.61, 0.62, 0.64, 0.66, 0.71, 0.77, 0.84],
     [0.47, 0.48, 0.50, 0.52, 0.54, 0.55, 0.56, 0.58, 0.59, 0.63, 0.68, 0.73],
+  ],
+};
+
+/* Máy tính chu kỳ cô đặc. limit: giới hạn nước tuần hoàn (ECOSS, dàn inox); example: mẫu nước cấp trong ví dụ TB-004.
+   m3hPerKw: ước tính lượng bay hơi theo nhiệt thải (ẩn nhiệt ~2400 kJ/kg → ~1,5 L/h cho mỗi kW). */
+const HB_COC = {
+  m3hPerKw: 0.0015,
+  params: [
+    { k: "cl",   name: ["Clorua", "Chlorides"],                 unit: "mg/L Cl⁻",   limit: 100,  example: 17 },
+    { k: "si",   name: ["Silica hoà tan", "Soluble silica"],    unit: "mg/L SiO₂",  limit: 150,  example: 48.8 },
+    { k: "ca",   name: ["Độ cứng canxi", "Calcium hardness"],   unit: "mg/L CaCO₃", limit: 500,  example: 20 },
+    { k: "alk",  name: ["Độ kiềm tổng", "Total alkalinity"],    unit: "mg/L CaCO₃", limit: 750,  example: 19.6 },
+    { k: "so4",  name: ["Sunfat", "Sulphates"],                 unit: "mg/L SO₄",   limit: 250,  example: null },
+    { k: "tds",  name: ["Tổng chất rắn hoà tan", "TDS"],        unit: "mg/L",       limit: 1500, example: 262 },
+    { k: "cond", name: ["Độ dẫn điện", "Conductivity"],         unit: "µS/cm",      limit: 3000, example: 104.3 },
   ],
 };
