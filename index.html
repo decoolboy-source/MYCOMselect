@@ -10,8 +10,8 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="nasa-ui.css?v=4">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="nasa-ui.css?v=5">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -27,6 +27,7 @@
     <div class="ui-topbar-actions">
       <button id="installBtn" class="ui-btn ui-btn-sm ui-hide-mobile" type="button" hidden><i data-icon="download"></i><span data-i18n="install">Cài đặt app</span></button>
       <button id="oilBtn" class="ui-btn ui-btn-sm ui-hide-mobile" type="button"><i data-icon="droplets"></i><span data-i18n="navOil">Dầu nạp</span></button>
+      <button id="hbBtn" class="ui-btn ui-btn-sm ui-hide-mobile" type="button"><i data-icon="book-open"></i><span data-i18n="navHandbook">Sổ tay</span></button>
       <button id="cartBtn" class="ui-btn ui-btn-sm ui-hide-mobile" type="button"><i data-icon="clipboard-list"></i><span data-i18n="navReport">Báo cáo</span><span id="cartBadge" class="ui-count">0</span></button>
       <button id="langBtn" class="ui-btn ui-btn-sm ui-btn-ghost" type="button" aria-label="Switch language"><i data-icon="languages"></i><span id="langLabel" class="ui-mono">EN</span></button>
     </div>
@@ -183,6 +184,23 @@
     </div>
   </div>
 
+  <!-- ============ Sổ tay (engine: handbook.js, nội dung: handbook-data.js) ============ -->
+  <div id="hbView" hidden>
+    <button type="button" id="backFromHbBtn" class="ui-btn-link ui-back"><i data-icon="arrow-left" class="ui-icon-sm"></i><span data-i18n="backToLookup">Quay lại tra cứu</span></button>
+    <div class="ui-page-head">
+      <div class="ui-page-head-text">
+        <h1 class="ui-title" data-i18n="hbTitle">Sổ tay máy nén MYCOM</h1>
+        <p class="ui-subtitle" data-i18n="hbSub">Giới hạn vận hành, dầu, lọc, cân chỉnh, lịch bảo dưỡng và checklist — tóm tắt từ tài liệu của hãng.</p>
+      </div>
+    </div>
+    <div class="hb-toolbar">
+      <label class="hb-search"><i data-icon="search"></i><input type="search" id="hbSearch" class="ui-input" data-i18n-ph="hbSearchPh" placeholder="Tìm: lọc tách, áp suất dầu, 62WB…" autocomplete="off"></label>
+      <div class="hb-filters" id="hbFilters" role="group"></div>
+      <span class="ui-count-text ui-small" id="hbCount"></span>
+    </div>
+    <div class="ui-stack hb-cards" id="hbCards"></div>
+  </div>
+
   <!-- ============ Báo cáo ============ -->
   <div id="reportView" hidden>
     <button type="button" id="backToLookupBtn" class="ui-btn-link ui-back"><i data-icon="arrow-left" class="ui-icon-sm"></i><span data-i18n="backToLookup">Quay lại tra cứu</span></button>
@@ -260,12 +278,15 @@
 <nav class="ui-bottombar" aria-label="Menu">
   <button type="button" class="ui-bottombar-btn" id="navHome" aria-current="page"><span class="ui-bottombar-pill"><i data-icon="search"></i></span><span data-i18n="navLookup">Tra cứu</span></button>
   <button type="button" class="ui-bottombar-btn" id="navOil"><span class="ui-bottombar-pill"><i data-icon="droplets"></i></span><span data-i18n="navOil">Dầu nạp</span></button>
+  <button type="button" class="ui-bottombar-btn" id="navHb"><span class="ui-bottombar-pill"><i data-icon="book-open"></i></span><span data-i18n="navHandbook">Sổ tay</span></button>
   <button type="button" class="ui-bottombar-btn" id="navQuote"><span class="ui-bottombar-pill"><i data-icon="clipboard-list"></i><span class="ui-count" id="quoteCountMobile">0</span></span><span data-i18n="navReport">Báo cáo</span></button>
 </nav>
 
 <script src="icons.js"></script>
 <script src="data-io.js"></script>
 <script src="oil.js"></script>
+<script src="handbook-data.js"></script>
+<script src="handbook.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

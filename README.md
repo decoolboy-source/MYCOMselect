@@ -19,6 +19,8 @@ nasa-ui.css     Giao diện CHUNG các app chọn thiết bị (giống hệt EC
 icons.js        Bộ icon CHUNG (trích từ Lucide, chạy offline)
 data-io.js      Xuất/Nhập dữ liệu JSON (chuẩn chung)
 oil.js          Bảng dầu nạp máy nén (lít/bộ, Không Eco / Có Eco)
+handbook.js     Engine tab Sổ tay (thẻ, tìm kiếm, máy tính mốc bảo trì, checklist) — dùng lại được cho app khác
+handbook-data.js Nội dung Sổ tay của MYCOM (song ngữ) — sửa/thêm thẻ ở đây
 style.css       Phần riêng của app
 app.js          Logic lọc, hiển thị, song ngữ, giỏ chọn, xuất phiếu
 data.json       Dữ liệu máy nén MYCOM (cùng cấu trúc với MCselect, chỉ 1 hãng)
@@ -72,6 +74,20 @@ cuối trang phải khớp bản mới.
 Màn hình **Dầu nạp** (nút trên thanh đầu / thanh dưới): chọn model, cấu hình Eco, số máy,
 % dự phòng → tổng lít dầu cần mua; kèm bảng đủ 24 model.
 
+Màn hình **Sổ tay** (nút trên thanh đầu / thanh dưới, link thẳng `index.html#so-tay`): các thẻ
+kiến thức thu gọn được, tìm không dấu, lọc theo Trục vít / Piston / Chung:
+
+- Đọc tên model trục vít; giới hạn vận hành trục vít và piston; giới hạn khởi động/dừng.
+- Dầu bôi trơn (lịch thay/phân tích, thang màu ASTM, rò đệm kín), lọc, cân đồng trục, dây đai.
+- Theo dõi hằng ngày kèm nguyên nhân bất thường; bảng bảo dưỡng định kỳ đến 48 tháng.
+- Máy tính mốc bảo trì: nhập số giờ chạy → mốc vừa qua / kế tiếp / còn lại của từng việc.
+- Ký hiệu thông số MyPro Touch; checklist chạy thử trục vít (tick lưu trong máy).
+- Bộ điều khiển MyPro Touch; điểm mạnh MYCOM.
+
+Nguồn: tài liệu tiếng Việt của Mayekawa Việt Nam (bảo dưỡng trục vít / piston, cập nhật 2020),
+form ghi thông số vận hành, checklist chạy thử. App chỉ tóm tắt số liệu, không kèm file gốc.
+Khoá localStorage: `MYCOMselect:hbMaint` (loại máy, giờ chạy), `MYCOMselect:hbChecks` (checklist).
+
 ## Cập nhật dữ liệu
 
 Bảng dầu nạp nằm trong `oil.js` (nguồn: `Compressor_Lubricant.csv`). Cột `sel` ghép mã đặt
@@ -98,6 +114,11 @@ HTML/CSS/JavaScript thuần, không framework, không thư viện ngoài, không
 backend; không gửi dữ liệu đi đâu.
 
 ## Lịch sử phiên bản
+
+### 2026-11-27 — `MYCOMselect-v4`, build 2026-11-27.3
+
+Thêm tab **Sổ tay** (handbook.js + handbook-data.js): 18 thẻ kiến thức vận hành – bảo dưỡng máy
+trục vít và piston, máy tính mốc bảo trì theo giờ chạy, checklist chạy thử. Thanh dưới thành 4 mục.
 
 ### 2026-11-27 — `MYCOMselect-v2`, build 2026-11-27.1
 

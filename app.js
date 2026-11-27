@@ -1,7 +1,7 @@
 /* [MYCOMselect] localStorage dùng chung origin với các PWA khác: mọi khóa của app này có tiền tố "MYCOMselect:". */
 
 // ===================== Build info =====================
-const BUILD_VERSION = "2026-11-27.2";
+const BUILD_VERSION = "2026-11-27.3";
 
 // ===================== i18n: UI strings =====================
 const UI = {
@@ -11,6 +11,10 @@ const UI = {
     navLookup: "Tra cứu",
     navReport: "Báo cáo",
     navOil: "Dầu nạp",
+    navHandbook: "Sổ tay",
+    hbTitle: "Sổ tay máy nén MYCOM",
+    hbSub: "Giới hạn vận hành, dầu, lọc, cân chỉnh, lịch bảo dưỡng và checklist — tóm tắt từ tài liệu của hãng.",
+    hbSearchPh: "Tìm: lọc tách, áp suất dầu, 62WB…",
     oilTitle: "Lượng dầu nạp máy nén",
     oilSub: "Lượng dầu nạp lần đầu cho một bộ máy theo catalogue MYCOM, có hoặc không có bộ tiết kiệm (economizer).",
     oilCalcTitle: "Tính lượng dầu cần mua",
@@ -135,6 +139,10 @@ const UI = {
     navLookup: "Lookup",
     navReport: "Report",
     navOil: "Oil charge",
+    navHandbook: "Handbook",
+    hbTitle: "MYCOM compressor handbook",
+    hbSub: "Operating limits, oil, filters, alignment, maintenance schedule and checklists — summarised from maker documents.",
+    hbSearchPh: "Search: separator, oil pressure, 62WB…",
     oilTitle: "Compressor oil charge",
     oilSub: "Initial oil charge per unit from the MYCOM catalogue, with or without economizer.",
     oilCalcTitle: "Oil quantity to order",
@@ -541,6 +549,10 @@ function applyStaticText(){
     const key = el.getAttribute("data-i18n");
     if (UI[LANG][key] !== undefined) el.textContent = UI[LANG][key];
   });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => {
+    const key = el.getAttribute("data-i18n-ph");
+    if (UI[LANG][key] !== undefined) el.placeholder = UI[LANG][key];
+  });
   document.getElementById("langLabel").textContent = LANG === "vi" ? "EN" : "VI";
   document.title = UI[LANG].appTitle;
 }
@@ -899,6 +911,7 @@ document.getElementById("langBtn").addEventListener("click", () => {
   LANG = LANG === "vi" ? "en" : "vi";
   localStorage.setItem("MYCOMselect:lang", LANG);
   refreshAllText();
+  if (!document.getElementById("hbView").hidden) HB.render(LANG);
 });
 
 uiIconsMount();
@@ -1080,10 +1093,10 @@ for (const f of COMMERCIAL_FIELDS) {
 }
 
 // ---- view toggling ----
-// Ba màn hình: tra cứu / dầu nạp / báo cáo. Thanh dưới (điện thoại) và nút trên thanh đầu (PC) chuyển qua lại.
+// Bốn màn hình: tra cứu / dầu nạp / sổ tay / báo cáo. Thanh dưới (điện thoại) và nút trên thanh đầu (PC) chuyển qua lại.
 function showView(name){
-  const views = { lookup: "lookupView", oil: "oilView", report: "reportView" };
-  const navs = { lookup: "navHome", oil: "navOil", report: "navQuote" };
+  const views = { lookup: "lookupView", oil: "oilView", hb: "hbView", report: "reportView" };
+  const navs = { lookup: "navHome", oil: "navOil", hb: "navHb", report: "navQuote" };
   for (const k of Object.keys(views)) {
     document.getElementById(views[k]).hidden = k !== name;
     const n = document.getElementById(navs[k]);
@@ -1091,6 +1104,7 @@ function showView(name){
   }
   if (name === "report") renderCart();
   if (name === "oil") renderOilView();
+  if (name === "hb") HB.render(LANG);
   window.scrollTo(0, 0);
 }
 document.getElementById("cartBtn").addEventListener("click", () => showView("report"));
@@ -1101,6 +1115,10 @@ document.getElementById("navHome").addEventListener("click", () => showView("loo
 document.getElementById("homeBrand").addEventListener("click", () => showView("lookup"));
 document.getElementById("backToLookupBtn").addEventListener("click", () => showView("lookup"));
 document.getElementById("backFromOilBtn").addEventListener("click", () => showView("lookup"));
+document.getElementById("hbBtn").addEventListener("click", () => showView("hb"));
+document.getElementById("navHb").addEventListener("click", () => showView("hb"));
+document.getElementById("backFromHbBtn").addEventListener("click", () => showView("lookup"));
+HB.init({ prefix: "MYCOMselect:" });
 
 // ===================== Dầu nạp (dữ liệu ở oil.js) =====================
 const OIL_KEY = "MYCOMselect:oilCalc";
@@ -1187,6 +1205,7 @@ document.getElementById("oilMargin").addEventListener("input", (e) => { OIL.marg
 document.getElementById("qtyInput").addEventListener("input", () => { if (currentRenderedRec) renderOilBox(currentRenderedRec); });
 // Mở thẳng màn hình Dầu nạp từ link ngoài (vd. Toolkits): index.html#dau-nap
 if (location.hash === "#dau-nap") showView("oil");
+if (location.hash === "#so-tay") showView("hb");
 document.getElementById("clearCartBtn").addEventListener("click", clearCart);
 
 document.getElementById("addToReportBtn").addEventListener("click", () => {
