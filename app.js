@@ -1,7 +1,7 @@
 /* [MYCOMselect] localStorage dùng chung origin với các PWA khác: mọi khóa của app này có tiền tố "MYCOMselect:". */
 
 // ===================== Build info =====================
-const BUILD_VERSION = "2026-11-27.3";
+const BUILD_VERSION = "2026-11-27.4";
 
 // ===================== i18n: UI strings =====================
 const UI = {

@@ -1,5 +1,5 @@
 /* handbook.js — Engine tab "Sổ tay" (dùng chung được giữa các app chọn thiết bị).
-   Cần có trước: icons.js (uiIcon), handbook-data.js (HB_GROUPS, HB_CARDS, HB_MAINT).
+   Cần có trước: icons.js (uiIcon), handbook-data.js (HB_GROUPS, HB_CARDS, HB_MAINT; tuỳ chọn HB_THR).
    App gọi:  HB.init({ prefix: "MYCOMselect:" })  một lần,  HB.render(lang)  mỗi khi mở tab / đổi ngôn ngữ.
    Trang cần các phần tử: #hbSearch, #hbFilters, #hbCards, #hbCount. */
 const HB = (() => {
@@ -7,11 +7,27 @@ const HB = (() => {
     vi: { all: "Tất cả", src: "Nguồn", none: "Không có mục nào khớp.", hours: "Số giờ chạy hiện tại (h)", type: "Loại máy",
           task: "Công việc", last: "Mốc vừa qua", next: "Mốc kế tiếp", left: "Còn lại", due: "Đến hạn", soon: "Sắp đến",
           once: "Đã qua (không lặp)", reset: "Bỏ đánh dấu", done: (a, b) => `Đã xong ${a}/${b}`, cards: (n) => `${n} mục`,
-          maintNote: "Chu kỳ theo tháng quy đổi 1 năm ≈ 8000 giờ như bảng định kỳ của tài liệu. Mốc 'sắp đến' = còn ≤ 10 % chu kỳ hoặc ≤ 200 h." },
+          maintNote: "Chu kỳ theo tháng quy đổi 1 năm ≈ 8000 giờ như bảng định kỳ của tài liệu. Mốc 'sắp đến' = còn ≤ 10 % chu kỳ hoặc ≤ 200 h.",
+          thrFrom: "Lấy số từ giỏ chọn", thrManual: "— Nhập tay —", thrAll: (n) => `Cộng cả giỏ (${n} máy tầm cao)`,
+          thrQ: "Năng suất lạnh Q₀ (kW)", thrP: "Công suất trục máy nén (kW)", thrOil: "Nhiệt giải nhiệt dầu (kW)",
+          thrOilMode: "Cách giải nhiệt dầu", thrIn: "Thermosiphon / phun dịch / nước dàn ngưng", thrOut: "Nước nguồn riêng",
+          thrTc: "Nhiệt độ ngưng tụ (°C)", thrWb: "Nhiệt độ bầu ướt (°C)",
+          thrTotal: "Nhiệt thải ra dàn ngưng", thrFactor: "Hệ số hiệu chỉnh", thrBase: "Năng suất danh định cần chọn",
+          thrRange: (a, b, c, d) => `Ngoài bảng hệ số: nhiệt độ ngưng ${a}–${b} °C, bầu ướt ${c}–${d} °C (ô trống trong bảng = dàn không đạt điều kiện này).`,
+          thrBooster: "Máy booster (ngưng ở ~2 °C) xả vào bình trung gian; nhiệt của nó do máy tầm cao mang ra dàn ngưng, nên không cộng vào đây.",
+          thrNote: "So năng suất danh định này với cột Base heat rejection (kW) của catalogue BAC VXC. Hãng khác có bảng hệ số riêng — tra lại theo catalogue hãng trước khi chốt." },
     en: { all: "All", src: "Source", none: "No matching items.", hours: "Current run hours (h)", type: "Machine type",
           task: "Task", last: "Last milestone", next: "Next milestone", left: "Remaining", due: "Due", soon: "Soon",
           once: "Passed (one-off)", reset: "Clear ticks", done: (a, b) => `Done ${a}/${b}`, cards: (n) => `${n} items`,
-          maintNote: "Month-based intervals use 1 year ≈ 8000 h as in the source periodic table. 'Soon' = ≤ 10 % of the interval or ≤ 200 h left." },
+          maintNote: "Month-based intervals use 1 year ≈ 8000 h as in the source periodic table. 'Soon' = ≤ 10 % of the interval or ≤ 200 h left.",
+          thrFrom: "Take values from the cart", thrManual: "— Manual entry —", thrAll: (n) => `Sum the cart (${n} high-stage units)`,
+          thrQ: "Refrigeration capacity Q₀ (kW)", thrP: "Compressor shaft power (kW)", thrOil: "Oil cooling load (kW)",
+          thrOilMode: "Oil cooling method", thrIn: "Thermosiphon / liquid injection / condenser water", thrOut: "Separate water source",
+          thrTc: "Condensing temperature (°C)", thrWb: "Wet bulb temperature (°C)",
+          thrTotal: "Heat rejected to condenser", thrFactor: "Correction factor", thrBase: "Base capacity to select",
+          thrRange: (a, b, c, d) => `Outside the factor table: condensing ${a}–${b} °C, wet bulb ${c}–${d} °C (blank cells = condition not reachable).`,
+          thrBooster: "Booster units (condensing at ~2 °C) discharge to the intercooler; their heat reaches the condenser through the high stage, so it is not added here.",
+          thrNote: "Compare this base capacity with the Base heat rejection (kW) column of the BAC VXC catalogue. Other makers use their own factor tables — check the maker's catalogue before finalising." },
   };
   let prefix = "app:";
   let lang = "vi";
@@ -20,6 +36,7 @@ const HB = (() => {
   const open = new Set();
   let maint = { type: "screw", hours: 0 };
   let ticks = {};
+  let thr = { q: 1000, p: 300, oil: 0, oilOut: false, tc: 35, wb: 27, pick: "" };
 
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const tx = (x) => x == null ? "" : Array.isArray(x) ? (lang === "vi" ? x[0] : x[1]) : String(x);
@@ -93,6 +110,84 @@ const HB = (() => {
       <p class="ui-tiny hb-note">${esc(S.maintNote)}</p></div>`;
   }
 
+  // ---------- Máy tính nhiệt thải ra dàn ngưng (bảng hệ số HB_THR) ----------
+  const num = (v) => { const x = parseFloat(String(v).replace(",", ".")); return isFinite(x) ? x : 0; };
+  const fmt2 = (n) => n.toLocaleString(lang === "vi" ? "vi-VN" : "en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function cartItems(){
+    try { const v = JSON.parse(localStorage.getItem(prefix + "cart") || "[]"); return Array.isArray(v) ? v : []; } catch { return []; }
+  }
+  function par(params, label, unit){ for (const [l, u, v] of params || []) if (l === label && (unit === undefined || u === unit)) return v; return null; }
+  // Một dòng trong giỏ → tải nhân với số lượng. Booster: nhiệt độ ngưng < 20 °C (xả vào bình trung gian).
+  function itemLoad(it){
+    const k = Math.max(1, parseInt(it.qty, 10) || 1);
+    const tc = num(par(it.params, "CONDENSING TEMP.", "[degC]"));
+    return { q: num(par(it.params, "CAPACITY", "[kW]")) * k, p: num(par(it.params, "ABSORBED POWER", "[kW]")) * k,
+             oil: num(par(it.params, "OIL HEAT REJECTION", "[kW]")) * k, tc, booster: tc < 20 };
+  }
+  // Nội suy song tuyến; null nếu ra ngoài bảng hoặc chạm ô trống.
+  function thrFactor(tc, wb){
+    const T = HB_THR.tc, W = HB_THR.wb, F = HB_THR.factors;
+    if (tc < T[0] || tc > T[T.length - 1] || wb < W[0] || wb > W[W.length - 1]) return null;
+    const seg = (arr, x) => { let i = 0; while (i < arr.length - 2 && x > arr[i + 1]) i++; return [i, (x - arr[i]) / (arr[i + 1] - arr[i])]; };
+    const [i, a] = seg(T, tc), [j, b] = seg(W, wb);
+    const pts = [[F[i][j], (1 - a) * (1 - b)], [F[i][j + 1], (1 - a) * b], [F[i + 1][j], a * (1 - b)], [F[i + 1][j + 1], a * b]];
+    let v = 0;
+    for (const [f, w] of pts) { if (w < 1e-9) continue; if (f == null) return null; v += f * w; }
+    return v;
+  }
+  function renderThrOut(){
+    const S = STR[lang];
+    const total = Math.max(0, thr.q + thr.p - (thr.oilOut ? thr.oil : 0));
+    const f = thrFactor(thr.tc, thr.wb);
+    const T = HB_THR.tc, W = HB_THR.wb;
+    const stat = (label, val, icon) => `<div class="ui-stat"><span class="ui-stat-label">${uiIcon(icon)}${esc(label)}</span><span class="ui-stat-value">${val}</span></div>`;
+    return `<div class="ui-stats hb-thr-stats">
+        ${stat(S.thrTotal, `${fmt(total)} <small>kW</small>`, "zap")}
+        ${stat(S.thrFactor, f == null ? "—" : fmt2(f), "thermometer")}
+        ${stat(S.thrBase, f == null ? "—" : `${fmt(total * f)} <small>kW</small>`, "wind")}
+      </div>
+      ${f == null ? `<div class="ui-alert ui-alert-warn">${uiIcon("triangle-alert")}<div class="ui-alert-body">${esc(S.thrRange(T[0], T[T.length - 1], W[0], W[W.length - 1]))}</div></div>` : ""}`;
+  }
+  function renderThr(){
+    const S = STR[lang];
+    if (typeof HB_THR === "undefined") return "";
+    const items = cartItems();
+    const hs = items.filter(it => !itemLoad(it).booster);
+    const hasBooster = items.some(it => itemLoad(it).booster);
+    const pick = items.length ? `<label class="ui-field hb-thr-pick"><span class="ui-label">${esc(S.thrFrom)}</span>
+        <select class="ui-select" id="hbThrPick"><option value="">${esc(S.thrManual)}</option>
+        ${hs.length > 1 ? `<option value="all"${thr.pick === "all" ? " selected" : ""}>${esc(S.thrAll(hs.length))}</option>` : ""}
+        ${items.map(it => `<option value="${esc(it.id)}"${thr.pick === it.id ? " selected" : ""}>${esc(`${it.qty > 1 ? it.qty + " × " : ""}${it.model}${itemLoad(it).booster ? " (booster)" : ""}`)}</option>`).join("")}
+        </select></label>` : "";
+    const inp = (key, label, step) => `<label class="ui-field"><span class="ui-label">${esc(label)}</span>
+        <input type="number" class="ui-input" data-hb-thr="${key}" inputmode="decimal" step="${step}" value="${thr[key]}"></label>`;
+    return `<div class="hb-thr">
+      ${pick}
+      <div class="ui-form-grid">
+        ${inp("q", S.thrQ, "any")}${inp("p", S.thrP, "any")}${inp("oil", S.thrOil, "any")}
+        <div class="ui-field"><span class="ui-label">${esc(S.thrOilMode)}</span><div class="mode-toggle" role="group">
+          <button type="button" class="mode-btn${thr.oilOut ? "" : " active"}" data-hb-oil="in">${esc(S.thrIn)}</button>
+          <button type="button" class="mode-btn${thr.oilOut ? " active" : ""}" data-hb-oil="out">${esc(S.thrOut)}</button></div></div>
+        ${inp("tc", S.thrTc, "0.5")}${inp("wb", S.thrWb, "0.5")}
+      </div>
+      ${hasBooster ? `<div class="ui-alert ui-alert-info">${uiIcon("info")}<div class="ui-alert-body">${esc(S.thrBooster)}</div></div>` : ""}
+      <div id="hbThrOut">${renderThrOut()}</div>
+      <p class="ui-tiny hb-note">${esc(S.thrNote)}</p></div>`;
+  }
+  function applyPick(id){
+    thr.pick = id;
+    const items = cartItems();
+    const list = id === "all" ? items.filter(it => !itemLoad(it).booster) : items.filter(it => it.id === id);
+    if (list.length) {
+      const L = list.map(itemLoad);
+      const sum = (k) => Math.round(L.reduce((a, x) => a + x[k], 0) * 10) / 10;
+      thr.q = sum("q"); thr.p = sum("p"); thr.oil = sum("oil");
+      const tc = L.find(x => !x.booster && x.tc);
+      if (tc) thr.tc = tc.tc;
+    }
+    save("hbThr", thr);
+  }
+
   function renderChecklist(b){
     const S = STR[lang];
     const st = ticks[b.id] || {};
@@ -114,6 +209,7 @@ const HB = (() => {
       case "astm": return renderAstm(b);
       case "maint": return renderMaint();
       case "checklist": return renderChecklist(b);
+      case "thr": return renderThr();
       default: return "";
     }
   }
@@ -145,6 +241,7 @@ const HB = (() => {
     maint = load("hbMaint", maint);
     if (!HB_MAINT[maint.type]) maint.type = Object.keys(HB_MAINT)[0];
     ticks = load("hbChecks", {});
+    thr = load("hbThr", thr);
 
     document.getElementById("hbSearch").addEventListener("input", (e) => { query = e.target.value; render(); });
     const root = document.getElementById("hbView");
@@ -153,6 +250,8 @@ const HB = (() => {
       if (g) { group = g.dataset.hbGroup; render(); return; }
       const mt = e.target.closest("[data-hb-mtype]");
       if (mt) { maint.type = mt.dataset.hbMtype; save("hbMaint", maint); render(); return; }
+      const oc = e.target.closest("[data-hb-oil]");
+      if (oc) { thr.oilOut = oc.dataset.hbOil === "out"; save("hbThr", thr); render(); return; }
       const rs = e.target.closest("[data-hb-reset]");
       if (rs) { delete ticks[rs.dataset.hbReset]; save("hbChecks", ticks); render(); }
     });
@@ -165,8 +264,15 @@ const HB = (() => {
         maint.hours = Math.max(0, parseInt(e.target.value, 10) || 0); save("hbMaint", maint);
         document.getElementById("hbMaintBody").innerHTML = renderMaintRows();
       }
+      const tk = e.target.dataset && e.target.dataset.hbThr;
+      if (tk) {
+        thr[tk] = num(e.target.value); thr.pick = ""; save("hbThr", thr);
+        const pk = document.getElementById("hbThrPick"); if (pk) pk.value = "";
+        document.getElementById("hbThrOut").innerHTML = renderThrOut();
+      }
     });
     root.addEventListener("change", (e) => {
+      if (e.target.id === "hbThrPick") { applyPick(e.target.value); render(); return; }
       const cb = e.target.closest("[data-hb-check]");
       if (!cb) return;
       const id = cb.dataset.hbCheck;

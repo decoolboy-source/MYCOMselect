@@ -13,6 +13,7 @@
        { type: "astm", marks: [4, 6] }          thang màu dầu ASTM 0.5–8.0
        { type: "maint" }                        máy tính mốc bảo trì (dữ liệu HB_MAINT)
        { type: "checklist", id, groups }        danh sách tick, lưu trong localStorage
+       { type: "thr" }                          máy tính nhiệt thải ra dàn ngưng (dữ liệu HB_THR, đọc giỏ chọn)
    Nguồn: tài liệu tiếng Việt của Mayekawa Việt Nam (bảo trì trục vít / piston, cập nhật 2020),
    form ghi thông số vận hành và checklist chạy thử MYCOM. Chỉ tóm tắt số liệu, không chép tài liệu gốc. */
 
@@ -20,6 +21,7 @@ const HB_GROUPS = {
   screw:  ["Trục vít", "Screw"],
   piston: ["Piston", "Piston"],
   common: ["Chung", "General"],
+  system: ["Hệ thống – dàn ngưng", "System – condenser"],
 };
 
 const SRC_SCREW  = "Mayekawa VN — Bảo dưỡng máy nén trục vít MYCOM (cập nhật 2020)";
@@ -512,6 +514,91 @@ const HB_CARDS = [
       ] },
     ],
   },
+  // ===================== HỆ THỐNG – DÀN NGƯNG =====================
+  {
+    id: "sys-thr", group: "system", icon: "wind",
+    title: ["Từ máy nén ra dàn ngưng: nhiệt thải và cỡ dàn", "From compressor to condenser: heat rejection and sizing"],
+    src: "Evapco Bulletin 153E ATC-E (2020); BAC VXC Product & Application Handbook — bảng hệ số R717",
+    blocks: [
+      { type: "p", text: ["Dàn ngưng phải thải cả nhiệt lấy từ kho lẫn nhiệt do máy nén đưa vào. Catalogue dàn ngưng bay hơi cho năng suất ở một điều kiện chuẩn, nên phải nhân với hệ số theo nhiệt độ ngưng và nhiệt độ bầu ướt rồi mới tra model.",
+                          "The condenser must reject both the load taken from the rooms and the heat added by the compressor. Evaporative condenser catalogues rate units at one base condition, so multiply by a factor for condensing and wet bulb temperature before picking a model."] },
+      { type: "list", items: [
+        ["Máy nén hở (trục vít, piston MYCOM): Nhiệt thải = Q₀ + công suất trục (ABSORBED POWER).", "Open compressors (MYCOM screw, piston): Heat rejection = Q₀ + shaft power (ABSORBED POWER)."],
+        ["Máy nén kín / nửa kín: Nhiệt thải = Q₀ + điện năng tiêu thụ.", "Hermetic / semi-hermetic: Heat rejection = Q₀ + electrical input."],
+        ["Năng suất danh định cần chọn = Nhiệt thải × hệ số (bảng dưới) → chọn model có Base heat rejection ≥ số này.", "Base capacity to select = Heat rejection × factor (table below) → pick a model with base heat rejection ≥ this value."],
+        ["Hệ thống 2 cấp: chỉ tính máy tầm cao (Q₀ của nó đã gồm nhiệt máy booster đưa lên). Không cộng thêm booster.", "Two-stage systems: count the high stage only (its Q₀ already includes the booster heat). Do not add the booster again."],
+      ] },
+      { type: "table",
+        head: [["Cách giải nhiệt dầu máy trục vít", "Screw oil cooling method"], ["Nhiệt dầu", "Oil heat"], ["Ghi chú", "Note"]],
+        rows: [
+          [["Thermosiphon (môi chất từ bình cao áp)", "Thermosiphon (refrigerant from HP receiver)"], ["Đã nằm trong nhiệt thải", "Included"], ["Hơi môi chất quay về dàn ngưng", "Vapour returns to the condenser"]],
+          [["Phun dịch (liquid injection)", "Liquid injection"], ["Đã nằm trong nhiệt thải", "Included"], ["Chọn dàn như bình thường", "Select as normal"]],
+          [["Két dầu dùng nước bể dàn ngưng (bơm riêng) hoặc mạch ống riêng trong dàn", "Oil cooler on condenser sump water (own pump) or a separate coil circuit"], ["Đã nằm trong nhiệt thải", "Included"], ["Nước hồi đổ về đầu bể xa cửa hút bơm; mạch riêng phải báo tải và lưu lượng cho hãng", "Return water to the far end of the sump; a separate circuit needs load and flow given to the maker"]],
+          [["Két dầu dùng nước từ nguồn riêng (tháp giải nhiệt khác)", "Oil cooler on water from a separate source"], ["Trừ ra", "Deduct"], ["Nhiệt thải = Q₀ + P − nhiệt dầu (OIL HEAT REJECTION)", "Heat rejection = Q₀ + P − oil load (OIL HEAT REJECTION)"]],
+        ] },
+      { type: "thr" },
+      { type: "table",
+        head: [["T ngưng (°C)", "Cond. (°C)"], ["Bầu ướt 20", "WB 20"], "21", "22", "24", "26", "28"],
+        rows: [
+          ["31", "1.43", "1.55", "1.69", "2.10", "2.84", "—"],
+          ["33", "1.19", "1.27", "1.36", "1.61", "2.00", "2.70"],
+          ["35", "1.02", "1.07", "1.13", "1.30", "1.53", "1.90"],
+          ["37", "0.88", "0.92", "0.97", "1.08", "1.23", "1.46"],
+          ["39", "0.78", "0.81", "0.84", "0.92", "1.03", "1.18"],
+          ["41", "0.69", "0.72", "0.74", "0.80", "0.88", "0.98"],
+        ],
+        note: ["Trích bảng hệ số R717 của BAC VXC (đủ bảng 29–45 °C × bầu ướt 10–28 °C nằm trong máy tính). Bầu ướt thiết kế ở miền Nam thường 27–28 °C: hệ số gần gấp đôi so với 22 °C.",
+               "Excerpt of the BAC VXC R717 factor table (the calculator holds the full 29–45 °C × 10–28 °C WB table). Southern Vietnam design wet bulb is often 27–28 °C: the factor is almost double that at 22 °C."] },
+      { type: "alert", tone: "info", text: ["Ví dụ catalogue BAC: nhiệt thải 950 kW, ngưng 35 °C, bầu ướt 22 °C → hệ số 1,13 → cần 1074 kW danh định → VXC-250 (1078 kW). Nếu có tách nhiệt (desuperheater) thu hồi khí nóng, catalogue còn nhân thêm hệ số 0,88–0,95 theo nhiệt độ hút.",
+                                            "BAC catalogue example: 950 kW heat rejection, 35 °C condensing, 22 °C wet bulb → factor 1.13 → 1074 kW base → VXC-250 (1078 kW). With a hot-gas desuperheater the catalogue applies a further 0.88–0.95 factor by suction temperature."] },
+      { type: "alert", tone: "warn", text: ["Bầu ướt vào dàn có thể cao hơn bầu ướt thời tiết nếu khí ẩm nóng thổi ra bị hút ngược lại (dàn đặt trong hốc, sát tường cao). Khi đó áp suất ngưng sẽ vượt thiết kế — xem thẻ \"Áp suất ngưng cao\".",
+                                            "Entering wet bulb can exceed the weather wet bulb when hot moist discharge air recirculates (units in wells or next to high walls). Condensing pressure then rises above design — see the \"High condensing pressure\" card."] },
+    ],
+  },
+  {
+    id: "sys-highpc", group: "system", icon: "gauge",
+    title: ["Áp suất ngưng cao: tìm nguyên nhân phía dàn ngưng", "High condensing pressure: condenser-side causes"],
+    src: "Evapco Bulletin 153E ATC-E (2020); Güntner/ECOSS RQ-177 Start-up checklist, TB-003/004; Güntner ADHN manual",
+    blocks: [
+      { type: "p", text: ["Áp suất nén (DISCHARGE PRESS.) cao hơn bình thường làm máy nén tốn điện hơn, nhiệt độ nén và nhiệt dầu tăng, máy có thể ngắt do áp suất cao. Trước khi nghi máy nén, đi một vòng kiểm tra dàn ngưng theo bảng dưới.",
+                          "Higher than normal discharge pressure costs compressor power, raises discharge and oil temperatures and can trip the HP switch. Before suspecting the compressor, walk the condenser with the table below."] },
+      { type: "table",
+        head: [["Nguyên nhân", "Cause"], ["Dấu hiệu / cách kiểm tra", "Sign / how to check"], ["Xử lý", "Remedy"]],
+        rows: [
+          [["Khí không ngưng (không khí) trong hệ", "Non-condensable gas (air) in the system"],
+           ["Áp suất đo cao hơn áp suất bão hòa ứng với nhiệt độ dịch ra khỏi dàn (bảng NH3 bên dưới). Hay gặp sau khi sửa chữa, nạp dầu, hoặc hệ có phần chạy chân không.", "Measured pressure is above the saturation pressure at the liquid outlet temperature (NH3 table below). Common after repairs, oil charging or parts of the plant running in vacuum."],
+           ["Xả khí ở điểm cao đầu ra dàn / bình cao áp, tốt nhất bằng bộ xả khí tự động. Khí lẫn còn làm dầu bị oxy hoá.", "Purge at the condenser outlet high points / receiver, preferably with an auto-purger. Air also oxidises the oil."]],
+          [["Khí nóng ẩm hút ngược vào dàn", "Hot moist air recirculating"],
+           ["Dàn đặt trong hốc, sát tường hoặc dàn khác; bầu ướt đo ở cửa gió vào cao hơn ngoài trời.", "Unit in a well, near walls or other units; wet bulb at the air inlet higher than ambient."],
+           ["Nối cao miệng thổi (chụp/ống gió) ngang tường; giãn khoảng cách theo hướng dẫn bố trí của hãng.", "Raise the discharge with a hood/duct to wall height; respect the maker's layout clearances."]],
+          [["Cáu cặn trên ống trao đổi nhiệt", "Scale on the coil"],
+           ["Ống có lớp vôi trắng; xả đáy thiếu hoặc van xả đóng bớt; độ dẫn điện nước bể vượt giới hạn.", "White deposit on tubes; bleed too low or valve throttled; sump conductivity above limit."],
+           ["Mở đủ xả đáy, có đơn vị xử lý nước theo dõi hằng tháng; chỉ dùng hoá chất tẩy hãng cho phép.", "Restore full bleed, monthly water treatment control; use only cleaning chemicals approved by the maker."]],
+          [["Nước phun không phủ đều", "Poor water coverage"],
+           ["Béc phun tắc hoặc lỏng; có mảng ống khô; lưới lọc hút bơm bẩn; dòng bơm thấp.", "Nozzles blocked or loose; dry patches on the coil; pump suction strainer dirty; low pump current."],
+           ["Vệ sinh béc, lưới lọc; kiểm tra chiều quay bơm và dòng điện.", "Clean nozzles and strainer; check pump rotation and current."]],
+          [["Mực nước bể thấp", "Low sump water level"],
+           ["Phao cấp nước chỉnh sai; bơm hút lẫn khí (cavitation), nhảy aptomat bơm.", "Float valve set wrong; pump cavitates, pump breaker trips."],
+           ["Chỉnh lại phao theo mức hãng ghi.", "Reset the float to the maker's level."]],
+          [["Quạt không đủ gió", "Insufficient airflow"],
+           ["Quạt quay ngược, dây đai trượt, tấm chắn bụi nước bị lệch hoặc đóng cặn; cảm biến điều khiển quạt đặt sai chỗ.", "Fan reversed, belt slipping, drift eliminators misplaced or scaled; fan control sensor wrongly placed."],
+           ["Kiểm chiều quay, căng đai; lắp lại tấm chắn; đặt cảm biến áp suất đúng vị trí, kiểm tra setpoint.", "Check rotation, tension belts; refit eliminators; relocate the pressure sensor, check setpoint."]],
+          [["Dịch đọng lại trong dàn (ngập dàn)", "Liquid backing up in the coil"],
+           ["Nhiều dàn song song mà thiếu ống cân bằng / xi phông ống chân dịch, hoặc ống xả dịch về bình nhỏ; dàn nào đó lạnh bất thường ở phần dưới.", "Parallel units without equaliser / trapped drop legs, or undersized drain lines; lower part of one unit unusually cold."],
+           ["Làm lại ống dịch theo sơ đồ đấu nối của hãng (xi phông, ống cân bằng về bình cao áp).", "Re-pipe per the maker's piping guide (trapped drop legs, equaliser to the receiver)."]],
+        ] },
+      { type: "table",
+        head: [["Nhiệt độ dịch (°C)", "Liquid temp. (°C)"], "30", "32", "35", "38", "40", "45"],
+        rows: [
+          [["Áp suất bão hòa NH3 (MPa tuyệt đối)", "NH3 saturation pressure (MPa abs)"], "1.17", "1.24", "1.35", "1.47", "1.56", "1.78"],
+          [["Áp suất bão hòa NH3 (MPa đồng hồ)", "NH3 saturation pressure (MPa gauge)"], "1.07", "1.14", "1.25", "1.37", "1.45", "1.68"],
+        ],
+        note: ["Cách đo: đo nhiệt độ ống dịch ngay sau dàn (bọc cách nhiệt đầu đo), so với áp suất đồng hồ tại dàn. Áp suất đo cao hơn hẳn giá trị bảng → có khí không ngưng.",
+               "Method: measure the liquid line temperature just after the condenser (insulate the probe) and compare with the gauge pressure at the condenser. Clearly higher than the table → non-condensables."] },
+      { type: "alert", tone: "info", text: ["Áp suất ngưng thấp cũng không tốt cho máy trục vít: áp suất dầu (OIL SUPPLY PRESS.) và chênh áp cấp dịch giảm. Mùa mát nên giữ áp suất ngưng tối thiểu bằng cách giảm quạt chứ không tắt bơm nước.",
+                                            "Too low a condensing pressure is also bad for screw compressors: oil supply pressure and liquid feed differential fall. In cool weather hold a minimum condensing pressure by reducing fans, not by stopping the spray pump."] },
+    ],
+  },
 ];
 
 /* Máy tính mốc bảo trì.
@@ -543,4 +630,22 @@ const HB_MAINT = {
       { name: ["Bộ đệm kín, khớp nối — kiểm tra", "Shaft seal, coupling — check"], at: [], every: 6000, note: ["Hoặc hằng năm", "Or yearly"] },
     ],
   },
+};
+
+/* Bảng hệ số hiệu chỉnh nhiệt thải dàn ngưng bay hơi, môi chất R717 (BAC VXC, Table 2B).
+   Năng suất danh định cần chọn = nhiệt thải × hệ số. null = dàn không đạt điều kiện này. */
+const HB_THR = {
+  tc: [29, 31, 33, 35, 37, 39, 41, 43, 45],
+  wb: [10, 12, 14, 16, 18, 19, 20, 21, 22, 24, 26, 28],
+  factors: [
+    [0.99, 1.08, 1.18, 1.32, 1.51, 1.63, 1.78, 1.97, 2.21, 2.99, null, null],
+    [0.88, 0.94, 1.02, 1.12, 1.25, 1.34, 1.43, 1.55, 1.69, 2.10, 2.84, null],
+    [0.79, 0.84, 0.90, 0.97, 1.07, 1.13, 1.19, 1.27, 1.36, 1.61, 2.00, 2.70],
+    [0.71, 0.75, 0.80, 0.86, 0.93, 0.97, 1.02, 1.07, 1.13, 1.30, 1.53, 1.90],
+    [0.65, 0.68, 0.72, 0.76, 0.82, 0.85, 0.88, 0.92, 0.97, 1.08, 1.23, 1.46],
+    [0.59, 0.62, 0.65, 0.68, 0.73, 0.75, 0.78, 0.81, 0.84, 0.92, 1.03, 1.18],
+    [0.54, 0.57, 0.59, 0.62, 0.65, 0.67, 0.69, 0.72, 0.74, 0.80, 0.88, 0.98],
+    [0.50, 0.52, 0.54, 0.56, 0.59, 0.61, 0.62, 0.64, 0.66, 0.71, 0.77, 0.84],
+    [0.47, 0.48, 0.50, 0.52, 0.54, 0.55, 0.56, 0.58, 0.59, 0.63, 0.68, 0.73],
+  ],
 };
