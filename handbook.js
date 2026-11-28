@@ -1,6 +1,8 @@
 /* handbook.js — Engine tab "Sổ tay" (dùng chung được giữa các app chọn thiết bị).
    Cần có trước: icons.js (uiIcon), handbook-data.js (HB_GROUPS, HB_CARDS, HB_MAINT; tuỳ chọn HB_THR, HB_COC, HB_CHARGE).
    App gọi:  HB.init({ prefix: "MYCOMselect:" })  một lần,  HB.render(lang)  mỗi khi mở tab / đổi ngôn ngữ.
+   Tuỳ chọn: HB.init({ prefix, carts: [{ key: "BITZERselect:cart", label: "BITZER" }, …] }) để máy tính nhiệt thải
+   đọc giỏ của nhiều app cùng origin (mặc định chỉ đọc prefix + "cart").  HB.open(id) mở và cuộn tới một thẻ.
    Trang cần các phần tử: #hbSearch, #hbFilters, #hbCards, #hbCount. */
 const HB = (() => {
   const STR = {
@@ -9,7 +11,10 @@ const HB = (() => {
           once: "Đã qua (không lặp)", reset: "Bỏ đánh dấu", done: (a, b) => `Đã xong ${a}/${b}`, cards: (n) => `${n} mục`,
           maintNote: "Chu kỳ theo tháng quy đổi 1 năm ≈ 8000 giờ như bảng định kỳ của tài liệu. Mốc 'sắp đến' = còn ≤ 10 % chu kỳ hoặc ≤ 200 h.",
           thrFrom: "Lấy số từ giỏ chọn", thrManual: "— Nhập tay —", thrAll: (n) => `Cộng cả giỏ (${n} máy tầm cao)`,
-          thrQ: "Năng suất lạnh Q₀ (kW)", thrP: "Công suất trục máy nén (kW)", thrOil: "Nhiệt giải nhiệt dầu (kW)",
+          thrQ: "Năng suất lạnh Q₀ (kW)", thrP: "Công suất trục / điện năng máy nén (kW)", thrOil: "Nhiệt giải nhiệt dầu (kW)",
+          thrRef: "Môi chất (bảng hệ số)", thrNoP: "Dữ liệu của máy này không có công suất điện — nhập tay ô công suất.",
+          thrCo2: "Bảng hệ số không có CO₂ (R744) — chỉ dùng phần nhiệt thải, cỡ dàn tra theo catalogue hãng.",
+          thrEmpty: "Giỏ chọn của các app máy nén đang trống — nhập tay, hoặc thêm máy vào giỏ ở app chọn máy nén rồi mở lại trang này.",
           thrOilMode: "Cách giải nhiệt dầu", thrIn: "Thermosiphon / phun dịch / nước dàn ngưng", thrOut: "Nước nguồn riêng",
           thrTc: "Nhiệt độ ngưng tụ (°C)", thrWb: "Nhiệt độ bầu ướt (°C)",
           thrTotal: "Nhiệt thải ra dàn ngưng", thrFactor: "Hệ số hiệu chỉnh", thrBase: "Năng suất danh định cần chọn",
@@ -29,7 +34,10 @@ const HB = (() => {
           once: "Passed (one-off)", reset: "Clear ticks", done: (a, b) => `Done ${a}/${b}`, cards: (n) => `${n} items`,
           maintNote: "Month-based intervals use 1 year ≈ 8000 h as in the source periodic table. 'Soon' = ≤ 10 % of the interval or ≤ 200 h left.",
           thrFrom: "Take values from the cart", thrManual: "— Manual entry —", thrAll: (n) => `Sum the cart (${n} high-stage units)`,
-          thrQ: "Refrigeration capacity Q₀ (kW)", thrP: "Compressor shaft power (kW)", thrOil: "Oil cooling load (kW)",
+          thrQ: "Refrigeration capacity Q₀ (kW)", thrP: "Compressor shaft / electrical power (kW)", thrOil: "Oil cooling load (kW)",
+          thrRef: "Refrigerant (factor table)", thrNoP: "This unit's data has no power input — enter the power manually.",
+          thrCo2: "The factor table has no CO₂ (R744) — use the heat rejection only and size the unit from the maker's catalogue.",
+          thrEmpty: "The compressor apps' carts are empty — enter values manually, or add units to a cart in a compressor app and reopen this page.",
           thrOilMode: "Oil cooling method", thrIn: "Thermosiphon / liquid injection / condenser water", thrOut: "Separate water source",
           thrTc: "Condensing temperature (°C)", thrWb: "Wet bulb temperature (°C)",
           thrTotal: "Heat rejected to condenser", thrFactor: "Correction factor", thrBase: "Base capacity to select",
@@ -52,7 +60,8 @@ const HB = (() => {
   const open = new Set();
   let maint = { type: "screw", hours: 0 };
   let ticks = {};
-  let thr = { q: 1000, p: 300, oil: 0, oilOut: false, tc: 35, wb: 27, pick: "" };
+  let thr = { q: 1000, p: 300, oil: 0, oilOut: false, tc: 35, wb: 27, pick: "", ref: "r717", noP: false, co2: false };
+  let carts = null;
   let coc = { evap: "", vals: {} };
 
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -130,20 +139,36 @@ const HB = (() => {
   // ---------- Máy tính nhiệt thải ra dàn ngưng (bảng hệ số HB_THR) ----------
   const num = (v) => { const x = parseFloat(String(v).replace(",", ".")); return isFinite(x) ? x : 0; };
   const fmt2 = (n) => n.toLocaleString(lang === "vi" ? "vi-VN" : "en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Gộp giỏ của các nguồn; mỗi dòng mang _uid (khoá nguồn + id) và _src (tên nguồn để hiển thị).
   function cartItems(){
-    try { const v = JSON.parse(localStorage.getItem(prefix + "cart") || "[]"); return Array.isArray(v) ? v : []; } catch { return []; }
+    const srcs = carts || [{ key: prefix + "cart", label: "" }];
+    const out = [];
+    for (const src of srcs) {
+      let v = [];
+      try { v = JSON.parse(localStorage.getItem(src.key) || "[]"); } catch {}
+      if (Array.isArray(v)) v.forEach(it => { if (it && it.params) out.push(Object.assign({}, it, { _uid: src.key + "|" + it.id, _src: src.label })); });
+    }
+    return out;
   }
   function par(params, label, unit){ for (const [l, u, v] of params || []) if (l === label && (unit === undefined || u === unit)) return v; return null; }
   // Một dòng trong giỏ → tải nhân với số lượng. Booster: nhiệt độ ngưng < 20 °C (xả vào bình trung gian).
+  // Tên thông số khác nhau giữa các hãng: ABSORBED POWER (MYCOM), POWER INPUT (Copeland, Panasonic),
+  // TOTAL HEAT REJECTION (BITZER: công suất = nhiệt thải − Q₀).
   function itemLoad(it){
     const k = Math.max(1, parseInt(it.qty, 10) || 1);
     const tc = num(par(it.params, "CONDENSING TEMP.", "[degC]"));
-    return { q: num(par(it.params, "CAPACITY", "[kW]")) * k, p: num(par(it.params, "ABSORBED POWER", "[kW]")) * k,
-             oil: num(par(it.params, "OIL HEAT REJECTION", "[kW]")) * k, tc, booster: tc < 20 };
+    const q = num(par(it.params, "CAPACITY", "[kW]"));
+    let pw = par(it.params, "ABSORBED POWER", "[kW]");
+    if (pw == null) pw = par(it.params, "POWER INPUT", "[kW]");
+    const thrTot = par(it.params, "TOTAL HEAT REJECTION", "[kW]");
+    if (pw == null && thrTot != null) pw = num(thrTot) - q;
+    const rf = String(par(it.params, "REFRIGERANT") || "").toUpperCase();
+    return { q: q * k, p: num(pw) * k, oil: num(par(it.params, "OIL HEAT REJECTION", "[kW]")) * k, tc, booster: tc < 20, noP: pw == null,
+             ref: /AMMONIA|R717|NH3/.test(rf) ? "r717" : /R744|CO2/.test(rf) ? "co2" : rf ? "hfc" : "" };
   }
   // Nội suy song tuyến; null nếu ra ngoài bảng hoặc chạm ô trống.
   function thrFactor(tc, wb){
-    const T = HB_THR.tc, W = HB_THR.wb, F = HB_THR.factors;
+    const T = HB_THR.tc, W = HB_THR.wb, F = (HB_THR.sets[thr.ref] || HB_THR.sets[Object.keys(HB_THR.sets)[0]]).factors;
     if (tc < T[0] || tc > T[T.length - 1] || wb < W[0] || wb > W[W.length - 1]) return null;
     const seg = (arr, x) => { let i = 0; while (i < arr.length - 2 && x > arr[i + 1]) i++; return [i, (x - arr[i]) / (arr[i + 1] - arr[i])]; };
     const [i, a] = seg(T, tc), [j, b] = seg(W, wb);
@@ -174,8 +199,11 @@ const HB = (() => {
     const pick = items.length ? `<label class="ui-field hb-thr-pick"><span class="ui-label">${esc(S.thrFrom)}</span>
         <select class="ui-select" id="hbThrPick"><option value="">${esc(S.thrManual)}</option>
         ${hs.length > 1 ? `<option value="all"${thr.pick === "all" ? " selected" : ""}>${esc(S.thrAll(hs.length))}</option>` : ""}
-        ${items.map(it => `<option value="${esc(it.id)}"${thr.pick === it.id ? " selected" : ""}>${esc(`${it.qty > 1 ? it.qty + " × " : ""}${it.model}${itemLoad(it).booster ? " (booster)" : ""}`)}</option>`).join("")}
-        </select></label>` : "";
+        ${items.map(it => `<option value="${esc(it._uid)}"${thr.pick === it._uid ? " selected" : ""}>${esc(`${it._src ? it._src + " · " : ""}${it.qty > 1 ? it.qty + " × " : ""}${it.model}${itemLoad(it).booster ? " (booster)" : ""}`)}</option>`).join("")}
+        </select></label>` : (carts ? `<p class="ui-tiny hb-note">${esc(S.thrEmpty)}</p>` : "");
+    const sets = Object.keys(HB_THR.sets);
+    const refToggle = sets.length > 1 ? `<div class="ui-field"><span class="ui-label">${esc(S.thrRef)}</span><div class="mode-toggle" role="group">
+          ${sets.map(k => `<button type="button" class="mode-btn${thr.ref === k ? " active" : ""}" data-hb-ref="${k}">${esc(tx(HB_THR.sets[k].label))}</button>`).join("")}</div></div>` : "";
     const inp = (key, label, step) => `<label class="ui-field"><span class="ui-label">${esc(label)}</span>
         <input type="number" class="ui-input" data-hb-thr="${key}" inputmode="decimal" step="${step}" value="${thr[key]}"></label>`;
     return `<div class="hb-thr">
@@ -185,22 +213,29 @@ const HB = (() => {
         <div class="ui-field"><span class="ui-label">${esc(S.thrOilMode)}</span><div class="mode-toggle" role="group">
           <button type="button" class="mode-btn${thr.oilOut ? "" : " active"}" data-hb-oil="in">${esc(S.thrIn)}</button>
           <button type="button" class="mode-btn${thr.oilOut ? " active" : ""}" data-hb-oil="out">${esc(S.thrOut)}</button></div></div>
-        ${inp("tc", S.thrTc, "0.5")}${inp("wb", S.thrWb, "0.5")}
+        ${refToggle}${inp("tc", S.thrTc, "0.5")}${inp("wb", S.thrWb, "0.5")}
       </div>
       ${hasBooster ? `<div class="ui-alert ui-alert-info">${uiIcon("info")}<div class="ui-alert-body">${esc(S.thrBooster)}</div></div>` : ""}
+      ${thr.noP ? `<div class="ui-alert ui-alert-warn">${uiIcon("triangle-alert")}<div class="ui-alert-body">${esc(S.thrNoP)}</div></div>` : ""}
+      ${thr.co2 ? `<div class="ui-alert ui-alert-warn">${uiIcon("triangle-alert")}<div class="ui-alert-body">${esc(S.thrCo2)}</div></div>` : ""}
       <div id="hbThrOut">${renderThrOut()}</div>
       <p class="ui-tiny hb-note">${esc(S.thrNote)}</p></div>`;
   }
   function applyPick(id){
     thr.pick = id;
     const items = cartItems();
-    const list = id === "all" ? items.filter(it => !itemLoad(it).booster) : items.filter(it => it.id === id);
+    const list = id === "all" ? items.filter(it => !itemLoad(it).booster) : items.filter(it => it._uid === id);
+    thr.noP = false; thr.co2 = false;
     if (list.length) {
       const L = list.map(itemLoad);
       const sum = (k) => Math.round(L.reduce((a, x) => a + x[k], 0) * 10) / 10;
       thr.q = sum("q"); thr.p = sum("p"); thr.oil = sum("oil");
       const tc = L.find(x => !x.booster && x.tc);
       if (tc) thr.tc = tc.tc;
+      thr.noP = L.some(x => x.noP);
+      thr.co2 = L.some(x => x.ref === "co2");
+      const rf = L.find(x => x.ref && x.ref !== "co2");
+      if (rf && HB_THR.sets[rf.ref]) thr.ref = rf.ref;
     }
     save("hbThr", thr);
   }
@@ -284,6 +319,7 @@ const HB = (() => {
       case "thr": return renderThr();
       case "coc": return renderCoc();
       case "charge": return renderCharge();
+      case "links": return `<div class="hb-links">${b.items.map(l => `<a class="ui-btn ui-btn-sm" href="${esc(l.href)}" target="_blank" rel="noopener">${uiIcon(l.icon || "arrow-right")}<span>${esc(tx(l.text))}</span></a>`).join("")}</div>`;
       default: return "";
     }
   }
@@ -326,10 +362,14 @@ const HB = (() => {
 
   function init(opts){
     prefix = (opts && opts.prefix) || prefix;
-    maint = load("hbMaint", maint);
-    if (!HB_MAINT[maint.type]) maint.type = Object.keys(HB_MAINT)[0];
+    carts = (opts && opts.carts) || null;
+    if (typeof HB_MAINT !== "undefined") {
+      maint = load("hbMaint", maint);
+      if (!HB_MAINT[maint.type]) maint.type = Object.keys(HB_MAINT)[0];
+    }
     ticks = load("hbChecks", {});
     thr = load("hbThr", thr);
+    if (typeof HB_THR !== "undefined" && !HB_THR.sets[thr.ref]) thr.ref = Object.keys(HB_THR.sets)[0];
     coc = load("hbCoc", coc);
     if (!coc.vals || typeof coc.vals !== "object") coc.vals = {};
     if (typeof HB_COC !== "undefined" && !Object.keys(coc.vals).length) HB_COC.params.forEach(pr => { if (pr.example != null) coc.vals[pr.k] = String(pr.example); });
@@ -341,6 +381,8 @@ const HB = (() => {
       if (g) { group = g.dataset.hbGroup; render(); return; }
       const mt = e.target.closest("[data-hb-mtype]");
       if (mt) { maint.type = mt.dataset.hbMtype; save("hbMaint", maint); render(); return; }
+      const rb = e.target.closest("[data-hb-ref]");
+      if (rb) { thr.ref = rb.dataset.hbRef; save("hbThr", thr); render(); return; }
       const oc = e.target.closest("[data-hb-oil]");
       if (oc) { thr.oilOut = oc.dataset.hbOil === "out"; save("hbThr", thr); render(); return; }
       const rs = e.target.closest("[data-hb-reset]");
@@ -357,7 +399,7 @@ const HB = (() => {
       }
       const tk = e.target.dataset && e.target.dataset.hbThr;
       if (tk) {
-        thr[tk] = num(e.target.value); thr.pick = ""; save("hbThr", thr);
+        thr[tk] = num(e.target.value); thr.pick = ""; if (tk === "p") thr.noP = false; save("hbThr", thr);
         const pk = document.getElementById("hbThrPick"); if (pk) pk.value = "";
         document.getElementById("hbThrOut").innerHTML = renderThrOut();
         refreshCoc();
@@ -383,5 +425,15 @@ const HB = (() => {
     });
   }
 
-  return { init, render };
+  // Mở một thẻ theo id (liên kết #id từ app khác), bỏ lọc, cuộn tới thẻ.
+  function openCard(id){
+    if (!HB_CARDS.some(c => c.id === id)) return false;
+    group = ""; query = ""; open.add(id);
+    render();
+    const el = document.querySelector(`[data-hb-card="${CSS.escape(id)}"]`);
+    if (el) { el.classList.add("hb-target"); el.scrollIntoView({ block: "start" }); }
+    return true;
+  }
+
+  return { init, render, open: openCard };
 })();

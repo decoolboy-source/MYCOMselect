@@ -13,9 +13,8 @@
        { type: "astm", marks: [4, 6] }          thang màu dầu ASTM 0.5–8.0
        { type: "maint" }                        máy tính mốc bảo trì (dữ liệu HB_MAINT)
        { type: "checklist", id, groups }        danh sách tick, lưu trong localStorage
-       { type: "thr" }                          máy tính nhiệt thải ra dàn ngưng (dữ liệu HB_THR, đọc giỏ chọn)
-       { type: "coc" }                          máy tính chu kỳ cô đặc / xả đáy nước dàn ngưng (dữ liệu HB_COC)
-       { type: "charge" }                       ước tính lượng nạp NH3 theo Q₀ của thẻ nhiệt thải (dữ liệu HB_CHARGE)
+       { type: "links", items: [{ href, icon, text }] }  nút mở app khác (vd. RefHandbook)
+   Kiến thức hệ thống dùng chung (dàn ngưng, nước, NH3 lượng nạp thấp…) nằm ở app RefHandbook.
    Nguồn: tài liệu tiếng Việt của Mayekawa Việt Nam (bảo trì trục vít / piston, cập nhật 2020),
    form ghi thông số vận hành và checklist chạy thử MYCOM. Chỉ tóm tắt số liệu, không chép tài liệu gốc. */
 
@@ -23,7 +22,6 @@ const HB_GROUPS = {
   screw:  ["Trục vít", "Screw"],
   piston: ["Piston", "Piston"],
   common: ["Chung", "General"],
-  system: ["Hệ thống – dàn ngưng", "System – condenser"],
 };
 
 const SRC_SCREW  = "Mayekawa VN — Bảo dưỡng máy nén trục vít MYCOM (cập nhật 2020)";
@@ -516,231 +514,22 @@ const HB_CARDS = [
       ] },
     ],
   },
-  // ===================== HỆ THỐNG – DÀN NGƯNG =====================
   {
-    id: "sys-thr", group: "system", icon: "wind",
-    title: ["Từ máy nén ra dàn ngưng: nhiệt thải và cỡ dàn", "From compressor to condenser: heat rejection and sizing"],
-    src: "Evapco Bulletin 153E ATC-E (2020); BAC VXC Product & Application Handbook — bảng hệ số R717",
+    id: "refhandbook", group: "common", icon: "book-open",
+    title: ["Kiến thức hệ thống: dàn ngưng, nước, NH3 lượng nạp thấp…", "System knowledge: condensers, water, low-charge NH3…"],
+    src: "App RefHandbook — Sổ tay hệ thống lạnh",
     blocks: [
-      { type: "p", text: ["Dàn ngưng phải thải cả nhiệt lấy từ kho lẫn nhiệt do máy nén đưa vào. Catalogue dàn ngưng bay hơi cho năng suất ở một điều kiện chuẩn, nên phải nhân với hệ số theo nhiệt độ ngưng và nhiệt độ bầu ướt rồi mới tra model.",
-                          "The condenser must reject both the load taken from the rooms and the heat added by the compressor. Evaporative condenser catalogues rate units at one base condition, so multiply by a factor for condensing and wet bulb temperature before picking a model."] },
-      { type: "list", items: [
-        ["Máy nén hở (trục vít, piston MYCOM): Nhiệt thải = Q₀ + công suất trục (ABSORBED POWER).", "Open compressors (MYCOM screw, piston): Heat rejection = Q₀ + shaft power (ABSORBED POWER)."],
-        ["Máy nén kín / nửa kín: Nhiệt thải = Q₀ + điện năng tiêu thụ.", "Hermetic / semi-hermetic: Heat rejection = Q₀ + electrical input."],
-        ["Năng suất danh định cần chọn = Nhiệt thải × hệ số (bảng dưới) → chọn model có Base heat rejection ≥ số này.", "Base capacity to select = Heat rejection × factor (table below) → pick a model with base heat rejection ≥ this value."],
-        ["Hệ thống 2 cấp: chỉ tính máy tầm cao (Q₀ của nó đã gồm nhiệt máy booster đưa lên). Không cộng thêm booster.", "Two-stage systems: count the high stage only (its Q₀ already includes the booster heat). Do not add the booster again."],
+      { type: "p", text: ["Các nội dung dùng chung cho mọi hãng máy nén nằm ở app riêng RefHandbook. Máy tính nhiệt thải ở đó lấy được số từ giỏ chọn của app này.",
+                          "Content shared by all compressor brands lives in the separate RefHandbook app. Its heat rejection calculator can read this app's cart."] },
+      { type: "links", items: [
+        { href: "../RefHandbook/#sys-thr", icon: "wind", text: ["Nhiệt thải và cỡ dàn ngưng", "Heat rejection and condenser size"] },
+        { href: "../RefHandbook/#sys-highpc", icon: "gauge", text: ["Áp suất ngưng cao", "High condensing pressure"] },
+        { href: "../RefHandbook/#sys-water", icon: "droplets", text: ["Nước dàn ngưng, xả đáy", "Condenser water, bleed-off"] },
+        { href: "../RefHandbook/#sys-commission", icon: "list-checks", text: ["Checklist chạy thử dàn ngưng", "Condenser start-up checklist"] },
+        { href: "../RefHandbook/#sys-lowcharge", icon: "snowflake", text: ["NH3 lượng nạp thấp", "Low-charge NH3"] },
+        { href: "../RefHandbook/#sys-phe", icon: "layers", text: ["Trao đổi nhiệt tấm quanh máy nén", "Plate heat exchangers"] },
+        { href: "../RefHandbook/", icon: "book-open", text: ["Mở RefHandbook", "Open RefHandbook"] },
       ] },
-      { type: "table",
-        head: [["Cách giải nhiệt dầu máy trục vít", "Screw oil cooling method"], ["Nhiệt dầu", "Oil heat"], ["Ghi chú", "Note"]],
-        rows: [
-          [["Thermosiphon (môi chất từ bình cao áp)", "Thermosiphon (refrigerant from HP receiver)"], ["Đã nằm trong nhiệt thải", "Included"], ["Hơi môi chất quay về dàn ngưng", "Vapour returns to the condenser"]],
-          [["Phun dịch (liquid injection)", "Liquid injection"], ["Đã nằm trong nhiệt thải", "Included"], ["Chọn dàn như bình thường", "Select as normal"]],
-          [["Két dầu dùng nước bể dàn ngưng (bơm riêng) hoặc mạch ống riêng trong dàn", "Oil cooler on condenser sump water (own pump) or a separate coil circuit"], ["Đã nằm trong nhiệt thải", "Included"], ["Nước hồi đổ về đầu bể xa cửa hút bơm; mạch riêng phải báo tải và lưu lượng cho hãng", "Return water to the far end of the sump; a separate circuit needs load and flow given to the maker"]],
-          [["Két dầu dùng nước từ nguồn riêng (tháp giải nhiệt khác)", "Oil cooler on water from a separate source"], ["Trừ ra", "Deduct"], ["Nhiệt thải = Q₀ + P − nhiệt dầu (OIL HEAT REJECTION)", "Heat rejection = Q₀ + P − oil load (OIL HEAT REJECTION)"]],
-        ] },
-      { type: "thr" },
-      { type: "table",
-        head: [["T ngưng (°C)", "Cond. (°C)"], ["Bầu ướt 20", "WB 20"], "21", "22", "24", "26", "28"],
-        rows: [
-          ["31", "1.43", "1.55", "1.69", "2.10", "2.84", "—"],
-          ["33", "1.19", "1.27", "1.36", "1.61", "2.00", "2.70"],
-          ["35", "1.02", "1.07", "1.13", "1.30", "1.53", "1.90"],
-          ["37", "0.88", "0.92", "0.97", "1.08", "1.23", "1.46"],
-          ["39", "0.78", "0.81", "0.84", "0.92", "1.03", "1.18"],
-          ["41", "0.69", "0.72", "0.74", "0.80", "0.88", "0.98"],
-        ],
-        note: ["Trích bảng hệ số R717 của BAC VXC (đủ bảng 29–45 °C × bầu ướt 10–28 °C nằm trong máy tính). Bầu ướt thiết kế ở miền Nam thường 27–28 °C: hệ số gần gấp đôi so với 22 °C.",
-               "Excerpt of the BAC VXC R717 factor table (the calculator holds the full 29–45 °C × 10–28 °C WB table). Southern Vietnam design wet bulb is often 27–28 °C: the factor is almost double that at 22 °C."] },
-      { type: "alert", tone: "info", text: ["Ví dụ catalogue BAC: nhiệt thải 950 kW, ngưng 35 °C, bầu ướt 22 °C → hệ số 1,13 → cần 1074 kW danh định → VXC-250 (1078 kW). Nếu có tách nhiệt (desuperheater) thu hồi khí nóng, catalogue còn nhân thêm hệ số 0,88–0,95 theo nhiệt độ hút.",
-                                            "BAC catalogue example: 950 kW heat rejection, 35 °C condensing, 22 °C wet bulb → factor 1.13 → 1074 kW base → VXC-250 (1078 kW). With a hot-gas desuperheater the catalogue applies a further 0.88–0.95 factor by suction temperature."] },
-      { type: "alert", tone: "warn", text: ["Bầu ướt vào dàn có thể cao hơn bầu ướt thời tiết nếu khí ẩm nóng thổi ra bị hút ngược lại (dàn đặt trong hốc, sát tường cao). Khi đó áp suất ngưng sẽ vượt thiết kế — xem thẻ \"Áp suất ngưng cao\".",
-                                            "Entering wet bulb can exceed the weather wet bulb when hot moist discharge air recirculates (units in wells or next to high walls). Condensing pressure then rises above design — see the \"High condensing pressure\" card."] },
-    ],
-  },
-  {
-    id: "sys-highpc", group: "system", icon: "gauge",
-    title: ["Áp suất ngưng cao: tìm nguyên nhân phía dàn ngưng", "High condensing pressure: condenser-side causes"],
-    src: "Evapco Bulletin 153E ATC-E (2020); Güntner/ECOSS RQ-177 Start-up checklist, TB-003/004; Güntner ADHN manual",
-    blocks: [
-      { type: "p", text: ["Áp suất nén (DISCHARGE PRESS.) cao hơn bình thường làm máy nén tốn điện hơn, nhiệt độ nén và nhiệt dầu tăng, máy có thể ngắt do áp suất cao. Trước khi nghi máy nén, đi một vòng kiểm tra dàn ngưng theo bảng dưới.",
-                          "Higher than normal discharge pressure costs compressor power, raises discharge and oil temperatures and can trip the HP switch. Before suspecting the compressor, walk the condenser with the table below."] },
-      { type: "table",
-        head: [["Nguyên nhân", "Cause"], ["Dấu hiệu / cách kiểm tra", "Sign / how to check"], ["Xử lý", "Remedy"]],
-        rows: [
-          [["Khí không ngưng (không khí) trong hệ", "Non-condensable gas (air) in the system"],
-           ["Áp suất đo cao hơn áp suất bão hòa ứng với nhiệt độ dịch ra khỏi dàn (bảng NH3 bên dưới). Hay gặp sau khi sửa chữa, nạp dầu, hoặc hệ có phần chạy chân không.", "Measured pressure is above the saturation pressure at the liquid outlet temperature (NH3 table below). Common after repairs, oil charging or parts of the plant running in vacuum."],
-           ["Xả khí ở điểm cao đầu ra dàn / bình cao áp, tốt nhất bằng bộ xả khí tự động. Khí lẫn còn làm dầu bị oxy hoá.", "Purge at the condenser outlet high points / receiver, preferably with an auto-purger. Air also oxidises the oil."]],
-          [["Khí nóng ẩm hút ngược vào dàn", "Hot moist air recirculating"],
-           ["Dàn đặt trong hốc, sát tường hoặc dàn khác; bầu ướt đo ở cửa gió vào cao hơn ngoài trời.", "Unit in a well, near walls or other units; wet bulb at the air inlet higher than ambient."],
-           ["Nối cao miệng thổi (chụp/ống gió) ngang tường; giãn khoảng cách theo hướng dẫn bố trí của hãng.", "Raise the discharge with a hood/duct to wall height; respect the maker's layout clearances."]],
-          [["Cáu cặn trên ống trao đổi nhiệt", "Scale on the coil"],
-           ["Ống có lớp vôi trắng; xả đáy thiếu hoặc van xả đóng bớt; độ dẫn điện nước bể vượt giới hạn.", "White deposit on tubes; bleed too low or valve throttled; sump conductivity above limit."],
-           ["Mở đủ xả đáy, có đơn vị xử lý nước theo dõi hằng tháng; chỉ dùng hoá chất tẩy hãng cho phép.", "Restore full bleed, monthly water treatment control; use only cleaning chemicals approved by the maker."]],
-          [["Nước phun không phủ đều", "Poor water coverage"],
-           ["Béc phun tắc hoặc lỏng; có mảng ống khô; lưới lọc hút bơm bẩn; dòng bơm thấp.", "Nozzles blocked or loose; dry patches on the coil; pump suction strainer dirty; low pump current."],
-           ["Vệ sinh béc, lưới lọc; kiểm tra chiều quay bơm và dòng điện.", "Clean nozzles and strainer; check pump rotation and current."]],
-          [["Mực nước bể thấp", "Low sump water level"],
-           ["Phao cấp nước chỉnh sai; bơm hút lẫn khí (cavitation), nhảy aptomat bơm.", "Float valve set wrong; pump cavitates, pump breaker trips."],
-           ["Chỉnh lại phao theo mức hãng ghi.", "Reset the float to the maker's level."]],
-          [["Quạt không đủ gió", "Insufficient airflow"],
-           ["Quạt quay ngược, dây đai trượt, tấm chắn bụi nước bị lệch hoặc đóng cặn; cảm biến điều khiển quạt đặt sai chỗ.", "Fan reversed, belt slipping, drift eliminators misplaced or scaled; fan control sensor wrongly placed."],
-           ["Kiểm chiều quay, căng đai; lắp lại tấm chắn; đặt cảm biến áp suất đúng vị trí, kiểm tra setpoint.", "Check rotation, tension belts; refit eliminators; relocate the pressure sensor, check setpoint."]],
-          [["Dịch đọng lại trong dàn (ngập dàn)", "Liquid backing up in the coil"],
-           ["Nhiều dàn song song mà thiếu ống cân bằng / xi phông ống chân dịch, hoặc ống xả dịch về bình nhỏ; dàn nào đó lạnh bất thường ở phần dưới.", "Parallel units without equaliser / trapped drop legs, or undersized drain lines; lower part of one unit unusually cold."],
-           ["Làm lại ống dịch theo sơ đồ đấu nối của hãng (xi phông, ống cân bằng về bình cao áp).", "Re-pipe per the maker's piping guide (trapped drop legs, equaliser to the receiver)."]],
-        ] },
-      { type: "table",
-        head: [["Nhiệt độ dịch (°C)", "Liquid temp. (°C)"], "30", "32", "35", "38", "40", "45"],
-        rows: [
-          [["Áp suất bão hòa NH3 (MPa tuyệt đối)", "NH3 saturation pressure (MPa abs)"], "1.17", "1.24", "1.35", "1.47", "1.56", "1.78"],
-          [["Áp suất bão hòa NH3 (MPa đồng hồ)", "NH3 saturation pressure (MPa gauge)"], "1.07", "1.14", "1.25", "1.37", "1.45", "1.68"],
-        ],
-        note: ["Cách đo: đo nhiệt độ ống dịch ngay sau dàn (bọc cách nhiệt đầu đo), so với áp suất đồng hồ tại dàn. Áp suất đo cao hơn hẳn giá trị bảng → có khí không ngưng.",
-               "Method: measure the liquid line temperature just after the condenser (insulate the probe) and compare with the gauge pressure at the condenser. Clearly higher than the table → non-condensables."] },
-      { type: "alert", tone: "info", text: ["Áp suất ngưng thấp cũng không tốt cho máy trục vít: áp suất dầu (OIL SUPPLY PRESS.) và chênh áp cấp dịch giảm. Mùa mát nên giữ áp suất ngưng tối thiểu bằng cách giảm quạt chứ không tắt bơm nước.",
-                                            "Too low a condensing pressure is also bad for screw compressors: oil supply pressure and liquid feed differential fall. In cool weather hold a minimum condensing pressure by reducing fans, not by stopping the spray pump."] },
-    ],
-  },
-  {
-    id: "sys-water", group: "system", icon: "droplets",
-    title: ["Nước dàn ngưng bay hơi: giới hạn, xả đáy, xử lý", "Evaporative condenser water: limits, bleed-off, treatment"],
-    src: "Güntner/ECOSS TB-003, TB-004 (2018); Evapco Bulletin 153E ATC-E (2020)",
-    blocks: [
-      { type: "p", text: ["Dàn ngưng thải nhiệt bằng cách cho nước bay hơi. Hơi nước đi ra là nước sạch, còn muối và cặn ở lại trong bể nên nước bể đặc dần. Nếu không xả bớt, cáu cặn bám ống làm áp suất ngưng tăng; nước nhiều clorua còn gây ăn mòn lỗ trên ống inox.",
-                          "The condenser rejects heat by evaporating water. The vapour leaves as pure water while salts stay in the sump, so the water gets more concentrated. Without bleed-off, scale builds on the coil and raises condensing pressure; chloride-rich water also pits stainless coils."] },
-      { type: "table",
-        head: [["Chỉ tiêu nước tuần hoàn", "Circulating water parameter"], ["Giới hạn", "Limit"]],
-        rows: [
-          ["pH", ["6,5 – 9,0 (dàn inox); 6,5 – 8,0 (dàn mạ kẽm)", "6.5 – 9.0 (stainless); 6.5 – 8.0 (galvanised)"]],
-          [["Độ kiềm tổng (ppm CaCO₃)", "Total alkalinity (ppm CaCO₃)"], "750"],
-          [["Độ cứng canxi (ppm CaCO₃)", "Calcium hardness (ppm CaCO₃)"], "500"],
-          [["Clorua (ppm Cl⁻)", "Chlorides (ppm Cl⁻)"], ["100 (tương đương 250 ppm NaCl)", "100 (= 250 ppm as NaCl)"]],
-          [["Silica hoà tan (ppm SiO₂)", "Soluble silica (ppm SiO₂)"], "150"],
-          [["Sunfat (ppm SO₄)", "Sulphates (ppm SO₄)"], "250"],
-          [["Tổng chất rắn hoà tan TDS (ppm)", "Total dissolved solids (ppm)"], "1500"],
-          [["Độ dẫn điện (µS/cm)", "Conductivity (µS/cm)"], "3000"],
-        ],
-        note: ["Giới hạn theo ECOSS (dàn inox). Mức pH cho dàn mạ kẽm theo Evapco. Hãng khác có thể khác — xem tài liệu của dàn đang dùng.",
-               "Limits from ECOSS (stainless units). pH range for galvanised units from Evapco. Other makers may differ — check the unit's manual."] },
-      { type: "p", text: ["Máy tính dưới đây lấy kết quả phân tích nước cấp, tính số lần mỗi chỉ tiêu được phép cô đặc (giới hạn / nước cấp). Chỉ tiêu có số nhỏ nhất quyết định số chu kỳ cô đặc và lượng xả đáy. Số điền sẵn là mẫu nước trong ví dụ của ECOSS; lượng bay hơi tự ước tính từ thẻ nhiệt thải nếu để trống.",
-                          "The calculator takes the make-up water analysis and works out how many times each parameter may concentrate (limit / make-up). The smallest value sets the cycles of concentration and the bleed-off. Pre-filled values are the ECOSS example water; evaporation is estimated from the heat rejection card when left blank."] },
-      { type: "coc" },
-      { type: "alert", tone: "info", text: ["Ví dụ ECOSS: silica giới hạn ở 3,1 chu kỳ; bay hơi 2,55 m³/h. Tài liệu tính xả đáy = 2,55 / 3,1 = 0,82 m³/h, nhưng công thức cân bằng muối đúng là 2,55 / (3,1 − 1) ≈ 1,23 m³/h. App dùng công thức đúng nên ra số lớn hơn.",
-                                            "ECOSS example: silica limits to 3.1 cycles; evaporation 2.55 m³/h. The document gives bleed = 2.55 / 3.1 = 0.82 m³/h, but the salt balance gives 2.55 / (3.1 − 1) ≈ 1.23 m³/h. The app uses the correct formula, so it shows the larger value."] },
-      { type: "list", items: [
-        ["Thuê đơn vị xử lý nước lập chương trình riêng theo nguồn nước và vật liệu dàn; kiểm tra chỉ tiêu và liều hoá chất hằng tháng.", "Have a water treatment company design a programme for the water source and unit materials; check parameters and dosing monthly."],
-        ["Hoá chất phải hợp với inox và nhôm của dàn: ECOSS yêu cầu không chứa hợp chất gốc clo, brom, iot.", "Chemicals must suit the unit's stainless steel and aluminium: ECOSS requires them free of chlorine, bromine and iodine compounds."],
-        ["Châm hoá chất liên tục theo định lượng; không đổ theo mẻ vì không kiểm soát được nồng độ. Nếu dùng axit phải định lượng chính xác.", "Dose chemicals continuously; batch feeding gives poor control. Acid, if used, must be accurately metered."],
-        ["Dàn mạ kẽm: thụ động hoá khi chạy thử để tránh \"rỉ trắng\"; pH ≥ 8,3 phải thụ động hoá định kỳ; pH < 6,0 dù ngắn cũng làm mất lớp kẽm.", "Galvanised units: passivate at start-up against white rust; pH ≥ 8.3 needs periodic passivation; pH < 6.0 even briefly strips the zinc."],
-        ["Kiểm soát vi sinh (rêu, nấm, Legionella) bằng chất diệt khuẩn và vệ sinh cơ học; giữ tấm chắn bụi nước còn tốt.", "Control biology (algae, slime, Legionella) with biocides and mechanical cleaning; keep drift eliminators in good condition."],
-        ["Áp lực nước cấp vào phao khoảng 1,4 – 3,4 bar (20 – 50 psig).", "Make-up water pressure at the float valve about 1.4 – 3.4 bar (20 – 50 psig)."],
-      ] },
-    ],
-  },
-  {
-    id: "sys-commission", group: "system", icon: "list-checks",
-    title: ["Checklist chạy thử dàn ngưng bay hơi", "Evaporative condenser start-up checklist"],
-    src: "Güntner/ECOSS RQ-177 Checklist for start-up (V4, 2018); BAC — chương trình bảo trì VXC",
-    blocks: [
-      { type: "p", text: ["Làm cùng lúc với checklist chạy thử máy nén. Mỗi mục ghi kèm rủi ro nếu bỏ qua. Trạng thái tick được lưu trên máy này.",
-                          "Do it together with the compressor commissioning checklist. Each item notes the risk if skipped. Ticks are saved on this device."] },
-      { type: "checklist", id: "sys-commission", groups: [
-        { title: ["Phần bể nước (module dưới)", "Basin (bottom module)"], items: [
-          ["Đường nước cấp, xả đáy, tràn, xả cặn đấu đúng — tránh thiếu nước, đọng nước quanh dàn, tăng cặn", "Make-up, drain, overflow and bleed lines connected — avoids water shortage, ponding, sediment"],
-          ["Phao cấp nước lắp đúng, chỉnh đúng mức nước — mức thấp làm bơm hút khí, hỏng cánh bơm", "Float valve fitted and level set — low level makes the pump cavitate and damages the impeller"],
-          ["Đặt lưu lượng xả đáy theo máy tính chu kỳ cô đặc — xả thiếu làm nước đặc, cáu cặn ống", "Set bleed-off from the cycles calculator — too little bleed concentrates water and scales the coil"],
-          ["Bơm phun: chiều quay đúng, ghi dòng điện — lưu lượng thấp làm áp suất ngưng tăng, nhảy aptomat", "Spray pump: rotation correct, record current — low flow raises condensing pressure and trips breakers"],
-          ["Lưới lọc hút bơm sạch, không vật lạ — tránh tắc béc, hỏng bơm", "Pump suction strainer clean, no debris — avoids blocked nozzles and pump damage"],
-          ["Tấm che cửa gió vào (louver) lắp đủ — tránh văng nước, nắng chiếu tạo rêu", "Air inlet louvers all fitted — prevents splash-out and algae from sunlight"],
-          ["Vỏ dàn không rò nước; inox được che chắn khi hàn/cắt ống thép gần đó — mạt sắt gây rỉ bề mặt", "No casing leaks; stainless protected from steel particles during nearby welding/cutting — iron dust causes surface rust"],
-          ["Lấy mẫu nước cấp gửi phân tích; có đơn vị xử lý nước và biết thành phần hoá chất dùng", "Make-up water sampled for lab analysis; water treatment company appointed and chemicals known"],
-        ] },
-        { title: ["Phần quạt – phân phối nước (module trên)", "Fan and distribution (upper module)"], items: [
-          ["Tủ điều khiển, chương trình điều khiển quạt đấu nối đúng", "Controller and fan control programme wired correctly"],
-          ["Quạt chạy đúng chiều; dây đai căng đúng (căng lại sau 24 h đầu, sau đó hằng tháng)", "Fans run the right way; belts tensioned (re-tension after the first 24 h, then monthly)"],
-          ["Cửa thăm/quạt mở được để vào kiểm tra hệ phân phối nước", "Access doors / fan panels open for reaching the distribution system"],
-          ["Tấm chắn bụi nước lắp đúng chiều, kín khe — tránh nước bị cuốn ra, đóng cặn cánh quạt", "Drift eliminators correctly oriented, no gaps — avoids drift and scale on fans"],
-          ["Béc phun đủ, đúng vị trí, không tắc, không rò ở khớp nối; nước phủ đều toàn bộ ống", "Nozzles all present, positioned, clear, no leaking joints; water covers the whole coil"],
-          ["Thang, lan can lắp theo hướng dẫn hãng", "Ladder and guardrail installed per maker's instructions"],
-        ] },
-        { title: ["Đường môi chất và điều khiển", "Refrigerant piping and control"], items: [
-          ["Ống môi chất đi đúng tiêu chuẩn, có giá đỡ, không treo tải lên cổ nối dàn", "Refrigerant piping to standard, supported, no loads on unit connections"],
-          ["Ống chân dịch có xi phông và giá đỡ; có ống cân bằng về bình cao áp khi nhiều dàn song song — tránh ngập dàn", "Drop legs trapped and supported; equaliser to receiver for parallel units — prevents coil flooding"],
-          ["Có điểm xả khí không ngưng ở đầu ra từng dàn / bình cao áp", "Non-condensable purge points at each unit outlet / receiver"],
-          ["Cảm biến áp suất điều khiển quạt đặt đúng chỗ, đấu đúng; kiểm tra setpoint", "Fan control pressure sensor in the right place and wired; setpoint checked"],
-          ["Chụp ảnh lưu hồ sơ phần đường ống và đấu nối", "Photograph piping and connections for the record"],
-        ] },
-      ] },
-    ],
-  },
-  {
-    id: "sys-lowcharge", group: "system", icon: "snowflake",
-    title: ["Hệ NH3 lượng nạp thấp và ảnh hưởng tới máy nén", "Low-charge NH3 systems and what they mean for the compressor"],
-    src: "Güntner — Low Charge NH3 Refrigeration Systems (National Engineering 2024, Bangkok)",
-    blocks: [
-      { type: "p", text: ["Môi chất HFC đang bị cắt giảm theo Kigali; nhà máy lớn dùng NH3 thì chịu quy định ngày càng chặt theo lượng nạp. Hướng đi là giữ NH3 nhưng giảm mạnh lượng dịch nằm trong hệ.",
-                          "HFCs are being phased down under Kigali, and large NH3 plants face rules that tighten with charge size. The direction is to keep NH3 but cut the liquid held in the system."] },
-      { type: "charge" },
-      { type: "list", items: [
-        ["Giảm dịch tích trữ: ít bình chứa lớn, ít dàn ngập dịch/tuần hoàn bơm, dùng nhiều dàn DX hơn.", "Store less liquid: fewer large vessels, fewer flooded/pumped evaporators, more DX."],
-        ["Ngưng tụ gần nơi dùng dịch; tránh ống dịch dài, ống to và ống hồi ướt.", "Condense close to where the liquid is used; avoid long or large liquid lines and wet returns."],
-        ["Bỏ giải nhiệt dầu kiểu thermosiphon (cần bình TS và cột dịch) — thay bằng cách khác.", "Replace thermosiphon oil cooling (it needs a TS vessel and liquid head) with an alternative."],
-        ["Hệ RDC (Remote Distributed Condenser): chỉ đưa hơi đi khắp nhà máy; mỗi cụm ngưng–bình nhỏ đặt sát 2 dàn DX; bộ điều khiển trung tâm theo dõi mức dịch toàn hệ.", "RDC (Remote Distributed Condenser): only vapour is piped through the plant; each small condenser/vessel set sits next to two DX evaporators; a central controller balances all liquid levels."],
-        ["Hệ \"Low Inventory\": cấp dịch vào dàn DX theo quá nhiệt và độ khô (SH/X), không bơm dịch, không có dịch nặng trong ống hút.", "\"Low Inventory\" plant: NH3 injected into DX evaporators by superheat and quality (SH/X) control, no liquid pumps, no heavy liquid in suction lines."],
-      ] },
-      { type: "table",
-        head: [["Khi chọn máy nén cho hệ lượng nạp thấp", "Compressor choices in a low-charge plant"], ["Ghi chú", "Note"]],
-        rows: [
-          [["Giải nhiệt dầu", "Oil cooling"], ["Chọn giải nhiệt bằng nước/glycol hoặc phun dịch thay cho thermosiphon (MYCOM có cả 3 tuỳ chọn). Két dầu bằng nước còn thu hồi được nhiệt — xem thẻ trao đổi nhiệt tấm.", "Use water/glycol or liquid injection rather than thermosiphon (MYCOM offers all three). A water oil cooler also allows heat recovery — see the plate heat exchanger card."]],
-          [["Phòng máy", "Engine room"], ["Hệ RDC vẫn giữ phòng máy trung tâm (nhỏ hơn); bảo trì máy nén tại phòng máy, không phải trên mái; dễ dự phòng khi hỏng một máy.", "RDC keeps a (smaller) central engine room; compressors are serviced there, not on the roof; easy back-up if one unit fails."]],
-          [["Ví dụ năng lượng trong tài liệu", "Energy example in the source"], ["Kho NH3 DX 2 cấp, máy piston có biến tần: 43 kWh/m³·năm; kho NH3 ngập dịch 1 cấp, máy trục vít: 106 kWh/m³·năm. Hai hệ khác nhau cả kiểu máy nén lẫn số cấp nén, nên chỉ để tham khảo.", "NH3 DX two-stage store with VFD reciprocating compressors: 43 kWh/m³·year; NH3 flooded single-stage store with screws: 106 kWh/m³·year. The plants differ in compressor type and staging too, so treat as indicative only."]],
-        ] },
-      { type: "table",
-        head: [["Cách ngưng tụ (hệ trung tâm lượng nạp thấp)", "Condensing option (low-charge central plant)"], ["Ưu", "Pros"], ["Nhược", "Cons"]],
-        rows: [
-          [["Dàn ngưng bay hơi", "Evaporative"], ["Tốn ít điện nhất ngày nóng thiết kế", "Lowest energy on the hot design day"], ["Nặng nhất, tốn nước, phải xử lý nước", "Heaviest, most water, needs water treatment"]],
-          [["Dàn ngưng gió", "Air-cooled"], ["Đơn giản, nhẹ, không dùng nước", "Simple, light, no water"], ["Tốn điện nhất ngày nóng", "Most energy on the hot day"]],
-          [["Trao đổi nhiệt tấm glycol + tháp kín", "Glycol PHE + evaporative fluid cooler"], ["Thiết bị trên mái nhỏ, nhẹ nhất; NH3 ở lại phòng máy", "Smallest, lightest on the roof; NH3 stays in the engine room"], ["Cần xử lý nước, tốn điện bơm glycol", "Water treatment and glycol pumping cost"]],
-          [["Dàn ngưng adiabatic", "Adiabatic"], ["Đơn giản như dàn gió, ngày nóng gần bằng dàn bay hơi; không xử lý nước", "Air-cooled simplicity, near-evaporative efficiency on hot days; no water treatment"], ["—", "—"]],
-        ] },
-    ],
-  },
-  {
-    id: "sys-phe", group: "system", icon: "layers",
-    title: ["Trao đổi nhiệt tấm quanh máy nén: két dầu, thu hồi nhiệt, cascade", "Plate heat exchangers around the compressor: oil cooler, heat recovery, cascade"],
-    src: "thermowave — Competence Refrigeration, thermolineVario info; Güntner low-charge NH3 (2024); số liệu nhiệt dầu tính từ dữ liệu MYCOM của app",
-    blocks: [
-      { type: "table",
-        head: [["Vị trí", "Duty"], ["Làm gì", "What it does"], ["Lưu ý khi chọn", "Selection note"]],
-        rows: [
-          [["Két làm mát dầu", "Oil cooler"], ["Giải nhiệt dầu bằng nước/glycol hoặc bằng môi chất (thermosiphon)", "Cools oil with water/glycol or refrigerant (thermosiphon)"], ["Tải = OIL HEAT REJECTION trong bảng chọn máy; dầu cấp về máy MYCOM ở 50 °C", "Load = OIL HEAT REJECTION in the selection data; MYCOM oil supply at 50 °C"]],
-          [["Tách nhiệt khí nóng (desuperheater)", "Desuperheater"], ["Lấy phần quá nhiệt của hơi nén để đun nước nóng, sưởi", "Uses discharge superheat to make hot water or heating"], ["Nước được đun gần tới nhiệt độ khí nén; máy trục vít phun dầu nén ra chỉ ~70–84 °C (ngưng 35 °C) nên phần nhiệt này nhỏ", "Water is heated close to discharge temperature; oil-injected screws discharge only ~70–84 °C (35 °C condensing), so this share is small"]],
-          [["Economizer / quá lạnh dịch", "Economizer / subcooler"], ["Quá lạnh dịch cấp, hơi sinh ra đưa về cổng E (economizer) của máy trục vít", "Subcools liquid; flash vapour goes to the screw's economizer (E) port"], ["Chỉ dùng với máy có cổng E (mã model đuôi E hoặc X)", "Only for machines with an E port (model suffix E or X)"]],
-          [["Dàn bay hơi làm lạnh glycol / nước", "Glycol / water chiller evaporator"], ["Bay hơi kiểu bơm tuần hoàn, kiểu trọng lực hoặc DX", "Pumped, gravity (flooded) or DX evaporation"], ["Kiểu DX giảm lượng nạp NH3", "DX mode lowers the NH3 charge"]],
-          [["Bình ngưng tụ / cascade NH3–CO₂", "Condenser / NH3–CO₂ cascade"], ["Ngưng tụ bằng nước; cascade: NH3 bay hơi để ngưng CO₂", "Water-cooled condensing; cascade: NH3 evaporates to condense CO₂"], ["Cascade chênh nhiệt độ lớn — loại tấm hàn nửa (semi-welded) chịu ứng suất nhiệt tốt hơn loại hàn kín", "Large temperature differences in cascade — semi-welded designs handle thermal stress better than fully welded"]],
-        ] },
-      { type: "table",
-        head: [["Ứng dụng MYCOM (ngưng 35 °C)", "MYCOM duty (35 °C condensing)"], ["Nhiệt độ bay hơi", "Evap. temp."], ["Nhiệt dầu / công suất trục", "Oil heat / shaft power"], ["Nhiệt dầu / nhiệt thải", "Oil heat / heat rejection"]],
-        rows: [
-          [["1 cấp, cổng L (điều hoà, chế biến)", "Single-stage, L port (process, A/C)"], "−8 … +2 °C", "28 – 48 %", "4 – 9 %"],
-          [["1 cấp, cổng M (kho lạnh)", "Single-stage, M port (cold store)"], "−30 … −25 °C", "54 – 68 %", "15 – 23 %"],
-          [["1 cấp, cổng H", "Single-stage, H port"], "−35 … −31 °C", "60 – 71 %", "18 – 25 %"],
-          [["2 cấp (LSC)", "Two-stage (LSC)"], "−47 … −25 °C", "55 – 76 %", "16 – 32 %"],
-        ],
-        note: ["Tính từ 178 điểm vận hành tầm cao trong dữ liệu của app. Ở nhiệt độ bay hơi thấp, nhiệt dầu chiếm tới khoảng 1/4–1/3 nhiệt thải: thu hồi qua két dầu nước có lợi hơn nhiều so với tách nhiệt khí nóng.",
-               "Computed from the 178 high-stage operating points in the app data. At low evaporating temperatures oil heat is about a quarter to a third of heat rejection: recovering it through a water oil cooler pays far more than a hot-gas desuperheater."] },
-      { type: "table",
-        head: [["Kiểu tấm", "Plate type"], ["Dùng với NH3?", "NH3 use?"], ["Ghi chú", "Note"]],
-        rows: [
-          [["Tấm đệm kín (gasketed)", "Gasketed"], ["Chỉ phía nước/glycol/dầu", "Water/glycol/oil side only"], ["Tháo rửa được, thêm bớt tấm để đổi công suất", "Can be opened and cleaned; add or remove plates"]],
-          [["Hàn nửa (semi-welded / laser-welded module)", "Semi-welded (laser-welded modules)"], ["Có — NH3 đi trong cặp tấm hàn, chỉ có đệm vòng ở cổng", "Yes — NH3 runs inside welded pairs; only ring gaskets at the ports"], ["Loại phổ biến cho NH3: bay hơi, ngưng tụ, két dầu, cascade", "Common NH3 choice: evaporators, condensers, oil coolers, cascade"]],
-          [["Hàn kín toàn bộ", "Fully welded"], ["Có", "Yes"], ["Không tháo rửa được phía trong", "Cannot be opened for cleaning"]],
-          [["Hàn đồng (brazed copper)", "Copper brazed"], ["Không — NH3 ăn mòn đồng", "No — ammonia attacks copper"], ["Với NH3 phải dùng loại hàn niken hoặc inox", "For NH3 use nickel-brazed or stainless designs"]],
-        ],
-        note: ["Ví dụ hãng thermowave: loại thường chịu tới 30 bar; dòng thermolinePlus chịu tới 63 bar phía module (dùng cho CO₂); nhiệt độ làm việc −45 … 160 °C.",
-               "thermowave example: standard units to 30 bar; thermolinePlus to 63 bar on the module side (for CO₂); operating −45 to 160 °C."] },
-      { type: "alert", tone: "info", text: ["Ví dụ thu hồi nhiệt trong tài liệu Güntner: dùng trao đổi nhiệt tấm lấy nhiệt két dầu máy nén để làm ấm nước cấp lò hơi, và lấy nhiệt glycol để thu hồi.",
-                                            "Heat recovery example in the Güntner paper: plate heat exchangers take heat from the compressor oil coolers to pre-heat boiler make-up water, plus glycol heat recovery."] },
     ],
   },
 ];
@@ -775,43 +564,3 @@ const HB_MAINT = {
     ],
   },
 };
-
-/* Bảng hệ số hiệu chỉnh nhiệt thải dàn ngưng bay hơi, môi chất R717 (BAC VXC, Table 2B).
-   Năng suất danh định cần chọn = nhiệt thải × hệ số. null = dàn không đạt điều kiện này. */
-const HB_THR = {
-  tc: [29, 31, 33, 35, 37, 39, 41, 43, 45],
-  wb: [10, 12, 14, 16, 18, 19, 20, 21, 22, 24, 26, 28],
-  factors: [
-    [0.99, 1.08, 1.18, 1.32, 1.51, 1.63, 1.78, 1.97, 2.21, 2.99, null, null],
-    [0.88, 0.94, 1.02, 1.12, 1.25, 1.34, 1.43, 1.55, 1.69, 2.10, 2.84, null],
-    [0.79, 0.84, 0.90, 0.97, 1.07, 1.13, 1.19, 1.27, 1.36, 1.61, 2.00, 2.70],
-    [0.71, 0.75, 0.80, 0.86, 0.93, 0.97, 1.02, 1.07, 1.13, 1.30, 1.53, 1.90],
-    [0.65, 0.68, 0.72, 0.76, 0.82, 0.85, 0.88, 0.92, 0.97, 1.08, 1.23, 1.46],
-    [0.59, 0.62, 0.65, 0.68, 0.73, 0.75, 0.78, 0.81, 0.84, 0.92, 1.03, 1.18],
-    [0.54, 0.57, 0.59, 0.62, 0.65, 0.67, 0.69, 0.72, 0.74, 0.80, 0.88, 0.98],
-    [0.50, 0.52, 0.54, 0.56, 0.59, 0.61, 0.62, 0.64, 0.66, 0.71, 0.77, 0.84],
-    [0.47, 0.48, 0.50, 0.52, 0.54, 0.55, 0.56, 0.58, 0.59, 0.63, 0.68, 0.73],
-  ],
-};
-
-/* Máy tính chu kỳ cô đặc. limit: giới hạn nước tuần hoàn (ECOSS, dàn inox); example: mẫu nước cấp trong ví dụ TB-004.
-   m3hPerKw: ước tính lượng bay hơi theo nhiệt thải (ẩn nhiệt ~2400 kJ/kg → ~1,5 L/h cho mỗi kW). */
-const HB_COC = {
-  m3hPerKw: 0.0015,
-  params: [
-    { k: "cl",   name: ["Clorua", "Chlorides"],                 unit: "mg/L Cl⁻",   limit: 100,  example: 17 },
-    { k: "si",   name: ["Silica hoà tan", "Soluble silica"],    unit: "mg/L SiO₂",  limit: 150,  example: 48.8 },
-    { k: "ca",   name: ["Độ cứng canxi", "Calcium hardness"],   unit: "mg/L CaCO₃", limit: 500,  example: 20 },
-    { k: "alk",  name: ["Độ kiềm tổng", "Total alkalinity"],    unit: "mg/L CaCO₃", limit: 750,  example: 19.6 },
-    { k: "so4",  name: ["Sunfat", "Sulphates"],                 unit: "mg/L SO₄",   limit: 250,  example: null },
-    { k: "tds",  name: ["Tổng chất rắn hoà tan", "TDS"],        unit: "mg/L",       limit: 1500, example: 262 },
-    { k: "cond", name: ["Độ dẫn điện", "Conductivity"],         unit: "µS/cm",      limit: 3000, example: 104.3 },
-  ],
-};
-
-/* Lượng nạp NH3 riêng theo kiểu hệ (kg trên mỗi kW lạnh) — Güntner, Low Charge NH3 (2024). */
-const HB_CHARGE = [
-  { name: ["Tuần hoàn bơm truyền thống", "Traditional pumped recirculation"], lo: 2.6, hi: 3.0 },
-  { name: ["Low Inventory (DX, điều khiển SH/X, không bơm)", "Low Inventory (DX, SH/X control, no pumps)"], lo: 0.6, hi: 1.2 },
-  { name: ["RDC — dàn ngưng phân tán", "RDC — remote distributed condenser"], lo: 0.2, hi: 0.4 },
-];
