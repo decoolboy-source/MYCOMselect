@@ -15,6 +15,7 @@
        { type: "checklist", id, groups }        danh sách tick, lưu trong localStorage
        { type: "thr" }                          máy tính nhiệt thải ra dàn ngưng (dữ liệu HB_THR, đọc giỏ chọn)
        { type: "coc" }                          máy tính chu kỳ cô đặc / xả đáy nước dàn ngưng (dữ liệu HB_COC)
+       { type: "charge" }                       ước tính lượng nạp NH3 theo Q₀ của thẻ nhiệt thải (dữ liệu HB_CHARGE)
    Nguồn: tài liệu tiếng Việt của Mayekawa Việt Nam (bảo trì trục vít / piston, cập nhật 2020),
    form ghi thông số vận hành và checklist chạy thử MYCOM. Chỉ tóm tắt số liệu, không chép tài liệu gốc. */
 
@@ -672,6 +673,76 @@ const HB_CARDS = [
       ] },
     ],
   },
+  {
+    id: "sys-lowcharge", group: "system", icon: "snowflake",
+    title: ["Hệ NH3 lượng nạp thấp và ảnh hưởng tới máy nén", "Low-charge NH3 systems and what they mean for the compressor"],
+    src: "Güntner — Low Charge NH3 Refrigeration Systems (National Engineering 2024, Bangkok)",
+    blocks: [
+      { type: "p", text: ["Môi chất HFC đang bị cắt giảm theo Kigali; nhà máy lớn dùng NH3 thì chịu quy định ngày càng chặt theo lượng nạp. Hướng đi là giữ NH3 nhưng giảm mạnh lượng dịch nằm trong hệ.",
+                          "HFCs are being phased down under Kigali, and large NH3 plants face rules that tighten with charge size. The direction is to keep NH3 but cut the liquid held in the system."] },
+      { type: "charge" },
+      { type: "list", items: [
+        ["Giảm dịch tích trữ: ít bình chứa lớn, ít dàn ngập dịch/tuần hoàn bơm, dùng nhiều dàn DX hơn.", "Store less liquid: fewer large vessels, fewer flooded/pumped evaporators, more DX."],
+        ["Ngưng tụ gần nơi dùng dịch; tránh ống dịch dài, ống to và ống hồi ướt.", "Condense close to where the liquid is used; avoid long or large liquid lines and wet returns."],
+        ["Bỏ giải nhiệt dầu kiểu thermosiphon (cần bình TS và cột dịch) — thay bằng cách khác.", "Replace thermosiphon oil cooling (it needs a TS vessel and liquid head) with an alternative."],
+        ["Hệ RDC (Remote Distributed Condenser): chỉ đưa hơi đi khắp nhà máy; mỗi cụm ngưng–bình nhỏ đặt sát 2 dàn DX; bộ điều khiển trung tâm theo dõi mức dịch toàn hệ.", "RDC (Remote Distributed Condenser): only vapour is piped through the plant; each small condenser/vessel set sits next to two DX evaporators; a central controller balances all liquid levels."],
+        ["Hệ \"Low Inventory\": cấp dịch vào dàn DX theo quá nhiệt và độ khô (SH/X), không bơm dịch, không có dịch nặng trong ống hút.", "\"Low Inventory\" plant: NH3 injected into DX evaporators by superheat and quality (SH/X) control, no liquid pumps, no heavy liquid in suction lines."],
+      ] },
+      { type: "table",
+        head: [["Khi chọn máy nén cho hệ lượng nạp thấp", "Compressor choices in a low-charge plant"], ["Ghi chú", "Note"]],
+        rows: [
+          [["Giải nhiệt dầu", "Oil cooling"], ["Chọn giải nhiệt bằng nước/glycol hoặc phun dịch thay cho thermosiphon (MYCOM có cả 3 tuỳ chọn). Két dầu bằng nước còn thu hồi được nhiệt — xem thẻ trao đổi nhiệt tấm.", "Use water/glycol or liquid injection rather than thermosiphon (MYCOM offers all three). A water oil cooler also allows heat recovery — see the plate heat exchanger card."]],
+          [["Phòng máy", "Engine room"], ["Hệ RDC vẫn giữ phòng máy trung tâm (nhỏ hơn); bảo trì máy nén tại phòng máy, không phải trên mái; dễ dự phòng khi hỏng một máy.", "RDC keeps a (smaller) central engine room; compressors are serviced there, not on the roof; easy back-up if one unit fails."]],
+          [["Ví dụ năng lượng trong tài liệu", "Energy example in the source"], ["Kho NH3 DX 2 cấp, máy piston có biến tần: 43 kWh/m³·năm; kho NH3 ngập dịch 1 cấp, máy trục vít: 106 kWh/m³·năm. Hai hệ khác nhau cả kiểu máy nén lẫn số cấp nén, nên chỉ để tham khảo.", "NH3 DX two-stage store with VFD reciprocating compressors: 43 kWh/m³·year; NH3 flooded single-stage store with screws: 106 kWh/m³·year. The plants differ in compressor type and staging too, so treat as indicative only."]],
+        ] },
+      { type: "table",
+        head: [["Cách ngưng tụ (hệ trung tâm lượng nạp thấp)", "Condensing option (low-charge central plant)"], ["Ưu", "Pros"], ["Nhược", "Cons"]],
+        rows: [
+          [["Dàn ngưng bay hơi", "Evaporative"], ["Tốn ít điện nhất ngày nóng thiết kế", "Lowest energy on the hot design day"], ["Nặng nhất, tốn nước, phải xử lý nước", "Heaviest, most water, needs water treatment"]],
+          [["Dàn ngưng gió", "Air-cooled"], ["Đơn giản, nhẹ, không dùng nước", "Simple, light, no water"], ["Tốn điện nhất ngày nóng", "Most energy on the hot day"]],
+          [["Trao đổi nhiệt tấm glycol + tháp kín", "Glycol PHE + evaporative fluid cooler"], ["Thiết bị trên mái nhỏ, nhẹ nhất; NH3 ở lại phòng máy", "Smallest, lightest on the roof; NH3 stays in the engine room"], ["Cần xử lý nước, tốn điện bơm glycol", "Water treatment and glycol pumping cost"]],
+          [["Dàn ngưng adiabatic", "Adiabatic"], ["Đơn giản như dàn gió, ngày nóng gần bằng dàn bay hơi; không xử lý nước", "Air-cooled simplicity, near-evaporative efficiency on hot days; no water treatment"], ["—", "—"]],
+        ] },
+    ],
+  },
+  {
+    id: "sys-phe", group: "system", icon: "layers",
+    title: ["Trao đổi nhiệt tấm quanh máy nén: két dầu, thu hồi nhiệt, cascade", "Plate heat exchangers around the compressor: oil cooler, heat recovery, cascade"],
+    src: "thermowave — Competence Refrigeration, thermolineVario info; Güntner low-charge NH3 (2024); số liệu nhiệt dầu tính từ dữ liệu MYCOM của app",
+    blocks: [
+      { type: "table",
+        head: [["Vị trí", "Duty"], ["Làm gì", "What it does"], ["Lưu ý khi chọn", "Selection note"]],
+        rows: [
+          [["Két làm mát dầu", "Oil cooler"], ["Giải nhiệt dầu bằng nước/glycol hoặc bằng môi chất (thermosiphon)", "Cools oil with water/glycol or refrigerant (thermosiphon)"], ["Tải = OIL HEAT REJECTION trong bảng chọn máy; dầu cấp về máy MYCOM ở 50 °C", "Load = OIL HEAT REJECTION in the selection data; MYCOM oil supply at 50 °C"]],
+          [["Tách nhiệt khí nóng (desuperheater)", "Desuperheater"], ["Lấy phần quá nhiệt của hơi nén để đun nước nóng, sưởi", "Uses discharge superheat to make hot water or heating"], ["Nước được đun gần tới nhiệt độ khí nén; máy trục vít phun dầu nén ra chỉ ~70–84 °C (ngưng 35 °C) nên phần nhiệt này nhỏ", "Water is heated close to discharge temperature; oil-injected screws discharge only ~70–84 °C (35 °C condensing), so this share is small"]],
+          [["Economizer / quá lạnh dịch", "Economizer / subcooler"], ["Quá lạnh dịch cấp, hơi sinh ra đưa về cổng E (economizer) của máy trục vít", "Subcools liquid; flash vapour goes to the screw's economizer (E) port"], ["Chỉ dùng với máy có cổng E (mã model đuôi E hoặc X)", "Only for machines with an E port (model suffix E or X)"]],
+          [["Dàn bay hơi làm lạnh glycol / nước", "Glycol / water chiller evaporator"], ["Bay hơi kiểu bơm tuần hoàn, kiểu trọng lực hoặc DX", "Pumped, gravity (flooded) or DX evaporation"], ["Kiểu DX giảm lượng nạp NH3", "DX mode lowers the NH3 charge"]],
+          [["Bình ngưng tụ / cascade NH3–CO₂", "Condenser / NH3–CO₂ cascade"], ["Ngưng tụ bằng nước; cascade: NH3 bay hơi để ngưng CO₂", "Water-cooled condensing; cascade: NH3 evaporates to condense CO₂"], ["Cascade chênh nhiệt độ lớn — loại tấm hàn nửa (semi-welded) chịu ứng suất nhiệt tốt hơn loại hàn kín", "Large temperature differences in cascade — semi-welded designs handle thermal stress better than fully welded"]],
+        ] },
+      { type: "table",
+        head: [["Ứng dụng MYCOM (ngưng 35 °C)", "MYCOM duty (35 °C condensing)"], ["Nhiệt độ bay hơi", "Evap. temp."], ["Nhiệt dầu / công suất trục", "Oil heat / shaft power"], ["Nhiệt dầu / nhiệt thải", "Oil heat / heat rejection"]],
+        rows: [
+          [["1 cấp, cổng L (điều hoà, chế biến)", "Single-stage, L port (process, A/C)"], "−8 … +2 °C", "28 – 48 %", "4 – 9 %"],
+          [["1 cấp, cổng M (kho lạnh)", "Single-stage, M port (cold store)"], "−30 … −25 °C", "54 – 68 %", "15 – 23 %"],
+          [["1 cấp, cổng H", "Single-stage, H port"], "−35 … −31 °C", "60 – 71 %", "18 – 25 %"],
+          [["2 cấp (LSC)", "Two-stage (LSC)"], "−47 … −25 °C", "55 – 76 %", "16 – 32 %"],
+        ],
+        note: ["Tính từ 178 điểm vận hành tầm cao trong dữ liệu của app. Ở nhiệt độ bay hơi thấp, nhiệt dầu chiếm tới khoảng 1/4–1/3 nhiệt thải: thu hồi qua két dầu nước có lợi hơn nhiều so với tách nhiệt khí nóng.",
+               "Computed from the 178 high-stage operating points in the app data. At low evaporating temperatures oil heat is about a quarter to a third of heat rejection: recovering it through a water oil cooler pays far more than a hot-gas desuperheater."] },
+      { type: "table",
+        head: [["Kiểu tấm", "Plate type"], ["Dùng với NH3?", "NH3 use?"], ["Ghi chú", "Note"]],
+        rows: [
+          [["Tấm đệm kín (gasketed)", "Gasketed"], ["Chỉ phía nước/glycol/dầu", "Water/glycol/oil side only"], ["Tháo rửa được, thêm bớt tấm để đổi công suất", "Can be opened and cleaned; add or remove plates"]],
+          [["Hàn nửa (semi-welded / laser-welded module)", "Semi-welded (laser-welded modules)"], ["Có — NH3 đi trong cặp tấm hàn, chỉ có đệm vòng ở cổng", "Yes — NH3 runs inside welded pairs; only ring gaskets at the ports"], ["Loại phổ biến cho NH3: bay hơi, ngưng tụ, két dầu, cascade", "Common NH3 choice: evaporators, condensers, oil coolers, cascade"]],
+          [["Hàn kín toàn bộ", "Fully welded"], ["Có", "Yes"], ["Không tháo rửa được phía trong", "Cannot be opened for cleaning"]],
+          [["Hàn đồng (brazed copper)", "Copper brazed"], ["Không — NH3 ăn mòn đồng", "No — ammonia attacks copper"], ["Với NH3 phải dùng loại hàn niken hoặc inox", "For NH3 use nickel-brazed or stainless designs"]],
+        ],
+        note: ["Ví dụ hãng thermowave: loại thường chịu tới 30 bar; dòng thermolinePlus chịu tới 63 bar phía module (dùng cho CO₂); nhiệt độ làm việc −45 … 160 °C.",
+               "thermowave example: standard units to 30 bar; thermolinePlus to 63 bar on the module side (for CO₂); operating −45 to 160 °C."] },
+      { type: "alert", tone: "info", text: ["Ví dụ thu hồi nhiệt trong tài liệu Güntner: dùng trao đổi nhiệt tấm lấy nhiệt két dầu máy nén để làm ấm nước cấp lò hơi, và lấy nhiệt glycol để thu hồi.",
+                                            "Heat recovery example in the Güntner paper: plate heat exchangers take heat from the compressor oil coolers to pre-heat boiler make-up water, plus glycol heat recovery."] },
+    ],
+  },
 ];
 
 /* Máy tính mốc bảo trì.
@@ -737,3 +808,10 @@ const HB_COC = {
     { k: "cond", name: ["Độ dẫn điện", "Conductivity"],         unit: "µS/cm",      limit: 3000, example: 104.3 },
   ],
 };
+
+/* Lượng nạp NH3 riêng theo kiểu hệ (kg trên mỗi kW lạnh) — Güntner, Low Charge NH3 (2024). */
+const HB_CHARGE = [
+  { name: ["Tuần hoàn bơm truyền thống", "Traditional pumped recirculation"], lo: 2.6, hi: 3.0 },
+  { name: ["Low Inventory (DX, điều khiển SH/X, không bơm)", "Low Inventory (DX, SH/X control, no pumps)"], lo: 0.6, hi: 1.2 },
+  { name: ["RDC — dàn ngưng phân tán", "RDC — remote distributed condenser"], lo: 0.2, hi: 0.4 },
+];

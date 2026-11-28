@@ -1,5 +1,5 @@
 /* handbook.js — Engine tab "Sổ tay" (dùng chung được giữa các app chọn thiết bị).
-   Cần có trước: icons.js (uiIcon), handbook-data.js (HB_GROUPS, HB_CARDS, HB_MAINT; tuỳ chọn HB_THR, HB_COC).
+   Cần có trước: icons.js (uiIcon), handbook-data.js (HB_GROUPS, HB_CARDS, HB_MAINT; tuỳ chọn HB_THR, HB_COC, HB_CHARGE).
    App gọi:  HB.init({ prefix: "MYCOMselect:" })  một lần,  HB.render(lang)  mỗi khi mở tab / đổi ngôn ngữ.
    Trang cần các phần tử: #hbSearch, #hbFilters, #hbCards, #hbCount. */
 const HB = (() => {
@@ -21,6 +21,8 @@ const HB = (() => {
           cocBad: "Nước cấp đã vượt giới hạn ở chỉ tiêu được tô đậm (số lần cô đặc ≤ 1): phải xử lý nước cấp trước, xả đáy không cứu được.",
           cocNone: "Nhập ít nhất một chỉ tiêu của nước cấp.",
           cocNote: "Xả đáy = bay hơi / (số chu kỳ − 1); nước bổ sung = bay hơi + xả đáy (đã gồm phần nước bị gió cuốn). Ô để trống thì bỏ qua chỉ tiêu đó. Kết quả phân tích thay đổi theo mùa — làm lại khi có kết quả mới.",
+          chgQ: (q) => `Q₀ = ${q} kW, lấy từ ô Năng suất lạnh ở thẻ "Từ máy nén ra dàn ngưng" (đổi số ở đó, bảng này đổi theo).`,
+          chgType: "Kiểu hệ thống", chgTotal: "Lượng NH3 ước tính",
           thrNote: "So năng suất danh định này với cột Base heat rejection (kW) của catalogue BAC VXC. Hãng khác có bảng hệ số riêng — tra lại theo catalogue hãng trước khi chốt." },
     en: { all: "All", src: "Source", none: "No matching items.", hours: "Current run hours (h)", type: "Machine type",
           task: "Task", last: "Last milestone", next: "Next milestone", left: "Remaining", due: "Due", soon: "Soon",
@@ -39,6 +41,8 @@ const HB = (() => {
           cocBad: "Make-up water already exceeds the limit for the highlighted parameter (ratio ≤ 1): treat the make-up water first; bleed cannot fix it.",
           cocNone: "Enter at least one make-up water parameter.",
           cocNote: "Bleed = evaporation / (cycles − 1); make-up = evaporation + bleed (drift included). Blank fields are skipped. Analyses vary by season — redo with each new result.",
+          chgQ: (q) => `Q₀ = ${q} kW, taken from the capacity field of the "From compressor to condenser" card (change it there and this table follows).`,
+          chgType: "System type", chgTotal: "Estimated NH3 charge",
           thrNote: "Compare this base capacity with the Base heat rejection (kW) column of the BAC VXC catalogue. Other makers use their own factor tables — check the maker's catalogue before finalising." },
   };
   let prefix = "app:";
@@ -243,6 +247,19 @@ const HB = (() => {
       <p class="ui-tiny hb-note">${esc(S.cocNote)}</p></div>`;
   }
 
+  // ---------- Ước tính lượng nạp NH3 theo Q₀ của thẻ nhiệt thải (dữ liệu HB_CHARGE) ----------
+  function renderChargeRows(){
+    return HB_CHARGE.map(c => `<tr><td class="hb-td-first">${esc(tx(c.name))}</td><td class="ui-num">${fmtN(c.lo, 1)} – ${fmtN(c.hi, 1)}</td>
+      <td class="ui-num">${fmt(thr.q * c.lo)} – ${fmt(thr.q * c.hi)} kg</td></tr>`).join("");
+  }
+  function renderCharge(){
+    const S = STR[lang];
+    if (typeof HB_CHARGE === "undefined") return "";
+    return `<div class="hb-thr"><p class="ui-tiny hb-note" id="hbChgQ">${esc(S.chgQ(fmt(thr.q)))}</p>
+      <div class="ui-table-wrap"><table class="ui-table hb-table"><thead><tr><th>${esc(S.chgType)}</th><th class="ui-num">kg/kW</th><th class="ui-num">${esc(S.chgTotal)}</th></tr></thead>
+      <tbody id="hbChgBody">${renderChargeRows()}</tbody></table></div></div>`;
+  }
+
   function renderChecklist(b){
     const S = STR[lang];
     const st = ticks[b.id] || {};
@@ -266,6 +283,7 @@ const HB = (() => {
       case "checklist": return renderChecklist(b);
       case "thr": return renderThr();
       case "coc": return renderCoc();
+      case "charge": return renderCharge();
       default: return "";
     }
   }
@@ -295,6 +313,8 @@ const HB = (() => {
   // Cập nhật phần kết quả nước (khi đổi số ở thẻ nhiệt thải hoặc ở chính thẻ nước) mà không vẽ lại ô nhập.
   function refreshCoc(){
     const out = document.getElementById("hbCocOut");
+    const cb = document.getElementById("hbChgBody");
+    if (cb) { cb.innerHTML = renderChargeRows(); document.getElementById("hbChgQ").textContent = STR[lang].chgQ(fmt(thr.q)); }
     if (!out) return;
     out.innerHTML = renderCocOut();
     const S = STR[lang];
